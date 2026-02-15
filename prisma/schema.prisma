@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Group {
+  MAMA
+  URGENCIAS
+  STANDARD
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+
+  role         Role     @default(USER)
+  group        Group?
+
+  // Límite mensual de guardias (999 = “prácticamente sin límite”)
+  monthlyLimit Int      @default(999)
+
+  createdAt    DateTime @default(now())
+
+  blocks       Block[]
+  shiftsSlot1  Shift[]  @relation("slot1User")
+  shiftsSlot2  Shift[]  @relation("slot2User")
+  auditLogs    AuditLog[] @relation("actorUser")
+  preferences  ShiftPreference[]
+}
+
+model ShiftPreference {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  date      String   @db.VarChar(10) // YYYY-MM-DD
+  points    Int      // Positive = want, Negative = avoid
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model Shift {
+  id           Int      @id @default(autoincrement())
+
+  /// Guardar SIEMPRE como "YYYY-MM-DD" (Europe/Madrid)
+  date         String   @unique @db.VarChar(10)
+
+  slot1UserId  Int
+  slot2UserId  Int
+
+  slot1User    User     @relation("slot1User", fields: [slot1UserId], references: [id])
+  slot2User    User     @relation("slot2User", fields: [slot2UserId], references: [id])
+
+  forced       Boolean  @default(false)
+  forcedReason String?  @db.VarChar(500)
+
+  createdAt    DateTime @default(now())
+
+  @@index([slot1UserId])
+  @@index([slot2UserId])
+  @@index([createdAt])
+}
+
+model Block {
+  id     Int    @id @default(autoincrement())
+  userId Int
+
+  /// "YYYY-MM"
+  month  String @db.VarChar(7)
+
+  /// "YYYY-MM-DD"
+  date   String @db.VarChar(10)
+
+  user   User   @relation(fields: [userId], references: [id])
+
+  /// Un usuario solo puede tener 1 bloqueo por mes
+  @@unique([userId, month])
+
+  @@index([month])
+  @@index([date])
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actorUserId Int?     // nullable por si quieres logs del sistema
+
+  action      String   @db.VarChar(80)
+  details     String?
+  createdAt   DateTime @default(now())
+
+  actorUser   User?    @relation("actorUser", fields: [actorUserId], references: [id])
+
+  @@index([actorUserId])
+  @@index([createdAt])
+}
