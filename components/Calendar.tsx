@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { format, parseISO, startOfMonth, getDay, getDaysInMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
-import BlockModal from './BlockModal'
+import PointsModal from './PointsModal'
 import DayEditor from './DayEditor'
 import DayDetailModal from './DayDetailModal'
 
@@ -22,7 +22,10 @@ export default function Calendar() {
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
+  const [targetUserIdToEdit, setTargetUserIdToEdit] = useState<number | null>(null)
   const [showDayEditor, setShowDayEditor] = useState(false)
+
+  const [preferences, setPreferences] = useState<any[]>([])
 
   useEffect(() => { fetchShifts() }, [month])
   async function fetchShifts() {
@@ -42,6 +45,10 @@ export default function Calendar() {
         for (const u of udata) map[u.id] = u.name
         setUsersMap(map)
       }
+
+      // Fetch preferences
+      const pres = await fetch(`/api/preferences?month=${month}`, { headers })
+      if (pres.ok) setPreferences(await pres.json())
     }
   }
 
@@ -130,7 +137,25 @@ export default function Calendar() {
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
                     </div>
                   ) : (
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                    (() => {
+                      const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
+                      const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
+
+                      return (
+                        <div className="flex gap-1 justify-center">
+                          {myPref && (
+                            <div className={`w-1.5 h-1.5 rounded-full ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                          )}
+                          {/* Admin sees a dot for others' requests */}
+                          {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400" title={`${otherPrefs.length} solicitudes`}></div>
+                          )}
+                          {!myPref && (!otherPrefs.length || user?.role !== 'ADMIN') && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                          )}
+                        </div>
+                      )
+                    })()
                   )}
                 </div>
 
@@ -148,6 +173,32 @@ export default function Calendar() {
                   ) : (
                     <div className="text-[10px] text-slate-400 dark:text-slate-600 text-center italic py-1">Libre</div>
                   )}
+
+                  {/* Show MY preference if no shift */}
+                  {!s && (() => {
+                    const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
+                    const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
+
+                    return (
+                      <div className="flex flex-col gap-0.5">
+                        {myPref && (
+                          <div className={`text-[10px] font-bold px-1 rounded border mb-0.5 ${myPref.type === 'LOCK'
+                            ? 'bg-slate-800 text-white border-slate-600'
+                            : myPref.type === 'BLOCK'
+                              ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                              : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                            }`}>
+                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'Puntos' : 'Solicitado'} {myPref.type !== 'LOCK' && `${myPref.points}pts`}
+                          </div>
+                        )}
+                        {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
+                          <div className="text-[10px] font-bold px-1 rounded border bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20">
+                            {otherPrefs.length} solicitudes
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </div>
               </div>
             )
@@ -161,13 +212,102 @@ export default function Calendar() {
           shift={shifts.find(s => s.date === selectedDate)}
           usersMap={usersMap}
           userRole={user?.role}
+          preferences={preferences.filter(p => p.date === selectedDate)}
           onClose={() => setShowDetailModal(false)}
-          onEdit={() => setShowDayEditor(true)}
-          onBlock={() => setShowBlockModal(true)}
+          onEdit={() => {
+            // If manual edit of shift
+            setShowDetailModal(false)
+            setShowDayEditor(true)
+          }}
+          onBlock={() => {
+            // "Sistema de puntos" -> PointsModal
+            setTargetUserIdToEdit(null)
+            setShowDetailModal(false)
+            setShowBlockModal(true)
+          }}
+          onLock={async () => {
+            // Hard Lock -> Direct API call
+            const token = localStorage.getItem('token')
+            const body: any = { date: selectedDate, type: 'LOCK', points: 0 } // Points 0 for lock
+            if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit // Logic for admin? 
+            // If I am user, I lock myself.
+
+            if (confirm('¿Seguro que quieres bloquear este día? No se te asignará guardia.')) {
+              const res = await fetch('/api/preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(body)
+              })
+              if (!res.ok) {
+                const err = await res.json()
+                alert(err.error || 'Error al guardar')
+              } else {
+                fetchShifts()
+                setShowDetailModal(false)
+              }
+            }
+          }}
+          disableLock={!!preferences.find(p => p.userId === user?.id && p.type === 'LOCK' && p.date.startsWith(month))}
+          onEditPreference={(targetId) => {
+            // Admin editing someone else's block
+            setTargetUserIdToEdit(targetId)
+            setShowDetailModal(false)
+            setShowBlockModal(true)
+          }}
+          onPreferencesUpdated={fetchShifts}
         />
       )}
 
-      {showBlockModal && selectedDate && <BlockModal date={selectedDate} onClose={() => { setShowBlockModal(false); fetchShifts() }} />}
+      {showBlockModal && selectedDate && (
+        <PointsModal
+          date={selectedDate}
+          // If editing target, find THEIR preference. Else find MINE.
+          existingPreference={preferences.find(p => p.date === selectedDate && p.userId === (targetUserIdToEdit || user?.id))}
+          // If editing target, we might not know their remaining points easily without fetching? 
+          // For now, let's calculate from loaded preferences if we have them all (Admin does).
+          pointsRemaining={(() => {
+            const uid = targetUserIdToEdit || user?.id
+            if (!uid) return 20
+            // Admin fetches ALL prefs, so we can filter by uid
+            const userPrefs = preferences.filter(p => p.userId === uid)
+            const used = userPrefs.filter(p => p.date !== selectedDate).reduce((sum, p) => sum + p.points, 0)
+            return 20 - used
+          })()}
+          onClose={() => { setShowBlockModal(false); setTargetUserIdToEdit(null) }}
+          onSave={async (type, points) => {
+            const token = localStorage.getItem('token')
+            const body: any = { date: selectedDate, type, points }
+            if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit
+
+            const res = await fetch('/api/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify(body)
+            })
+            if (res.ok) {
+              fetchShifts()
+              setShowBlockModal(false)
+              setTargetUserIdToEdit(null)
+            } else {
+              alert('Error saving preference')
+            }
+          }}
+          onDelete={async () => {
+            const token = localStorage.getItem('token')
+            const body: any = { date: selectedDate, points: 0 }
+            if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit
+
+            await fetch('/api/preferences', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              body: JSON.stringify(body)
+            })
+            fetchShifts()
+            setShowBlockModal(false)
+            setTargetUserIdToEdit(null)
+          }}
+        />
+      )}
       {showDayEditor && selectedDate && <DayEditor date={selectedDate} onClose={() => { setShowDayEditor(false); }} onSaved={() => { fetchShifts(); setShowDetailModal(true) }} />}
     </div>
   )

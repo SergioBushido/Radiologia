@@ -6,6 +6,8 @@ import { useRouter } from 'next/router'
 import ToastProvider from '../components/ToastProvider'
 import LoadingProvider from '../components/LoadingProvider'
 import BottomNav from '../components/BottomNav'
+import ChatFloating from '../components/ChatFloating'
+import { MessageProvider } from '../lib/MessageContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -43,8 +45,11 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
       <ToastProvider>
         <LoadingProvider>
-          <Component {...pageProps} toggleTheme={toggleTheme} theme={theme} />
-          {!isLoginPage && <BottomNav toggleTheme={toggleTheme} theme={theme} />}
+          <MessageProvider>
+            <Component {...pageProps} toggleTheme={toggleTheme} theme={theme} />
+            {!isLoginPage && <BottomNav toggleTheme={toggleTheme} theme={theme} />}
+            <ChatFloating />
+          </MessageProvider>
         </LoadingProvider>
       </ToastProvider>
     </div>

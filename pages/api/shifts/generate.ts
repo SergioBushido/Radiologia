@@ -23,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    return res.json({ ok: true, createdCount: solution.length })
+    return res.json({ ok: true, createdCount: solution.length, shifts: solution })
   } catch (err: any) {
     console.error(err)
     return res.status(500).json({ error: err.message })

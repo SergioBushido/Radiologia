@@ -1,13 +1,23 @@
 import Link from 'next/link'
 import { useAuth } from '../lib/useAuth'
+import { useMessages } from '../lib/MessageContext'
 
 export default function BottomNav({ theme, toggleTheme }: { theme: 'light' | 'dark', toggleTheme: () => void }) {
   const { user, logout } = useAuth()
+  const { unreadCount } = useMessages()
 
   return (
-    <nav className="fixed bottom-4 left-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-2xl flex items-center justify-between px-6 py-3 border border-slate-200 dark:border-white/10 max-w-lg mx-auto overflow-x-auto gap-4">
+    <nav className="fixed bottom-4 left-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-2xl flex items-center justify-between px-6 py-3 border border-slate-200 dark:border-white/10 max-w-lg mx-auto overflow-x-auto gap-4 z-50">
       <Link href="/" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-sm">Calendario</Link>
       <Link href="/mis-guardias" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-sm">Mis guardias</Link>
+      <Link href="/mensajes" className="relative text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-sm">
+        Mensajes
+        {unreadCount > 0 && (
+          <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
+            {unreadCount}
+          </span>
+        )}
+      </Link>
 
       <button
         onClick={toggleTheme}

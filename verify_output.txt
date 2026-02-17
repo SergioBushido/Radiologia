@@ -1,0 +1,6 @@
+Sorted Order (Should be: User 1, User 4, User 2, User 3):
+User 1 (No Block) - BlockPts: 0, Shifts: 5
+User 4 (No Block, High Shifts) - BlockPts: 0, Shifts: 10
+User 2 (Small Block) - BlockPts: 1, Shifts: 5
+User 3 (Big Block) - BlockPts: 10, Shifts: 5
+SUCCESS: Logic prioritizes low block points correctly.

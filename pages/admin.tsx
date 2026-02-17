@@ -15,6 +15,7 @@ export default function Admin() {
   const { setLoading } = useLoading()
   const [showCreate, setShowCreate] = useState(false)
   const [createForm, setCreateForm] = useState<any>({ name: '', email: '', password: 'Password123!', role: 'USER', group: '' })
+  const [selectedMonth, setSelectedMonth] = useState(() => new Date().toISOString().slice(0, 7))
 
   useEffect(() => { if (!loading && !user) router.push('/login'); if (user && user.role !== 'ADMIN') router.push('/') }, [loading, user])
   useEffect(() => { if (user && user.role === 'ADMIN') fetchUsers() }, [user])
@@ -32,11 +33,10 @@ export default function Admin() {
   }
 
   async function resetShifts() {
-    if (!confirm('¿Estás seguro de que quieres eliminar TODAS las guardias de este mes? Esta acción no se puede deshacer.')) return
-    const month = new Date().toISOString().slice(0, 7)
+    if (!confirm(`¿Estás seguro de que quieres eliminar TODAS las guardias de ${selectedMonth}? Esta acción no se puede deshacer.`)) return
     const token = localStorage.getItem('token')
     setLoading(true)
-    const res = await fetch('/api/shifts/reset', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ month }) })
+    const res = await fetch('/api/shifts/reset', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ month: selectedMonth }) })
     setLoading(false)
     if (res.ok) {
       addToast('Guardias eliminadas', 'success')
@@ -47,10 +47,9 @@ export default function Admin() {
   }
 
   async function generate() {
-    const month = new Date().toISOString().slice(0, 7)
     const token = localStorage.getItem('token')
     setLoading(true)
-    const res = await fetch('/api/shifts/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ month }) })
+    const res = await fetch('/api/shifts/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ month: selectedMonth }) })
     const data = await res.json()
     setLoading(false)
     localStorage.setItem('lastGenerate', JSON.stringify(data))
@@ -62,10 +61,18 @@ export default function Admin() {
 
   return (
     <div className="p-6 min-h-screen pb-28">
-      <div className="mb-6">
-        <Logo className="w-10 h-10" />
+      <div className="mb-6 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <Logo className="w-10 h-10" />
+          <h1 className="text-xl font-semibold text-slate-400">Panel de Administración</h1>
+        </div>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={e => setSelectedMonth(e.target.value)}
+          className="p-2 rounded-lg bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 text-sm font-bold shadow-sm"
+        />
       </div>
-      <h1 className="text-xl font-semibold text-slate-400 mb-6">Panel de Administración</h1>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <button onClick={generate} className="flex-1 min-w-[150px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-3 rounded-xl shadow-md transition-all active:scale-95 flex items-center justify-center gap-2 text-sm">
