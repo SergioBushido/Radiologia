@@ -1,261 +1,252 @@
 import { prisma } from './prisma'
-import { validateDay, validateAssignment } from './rules'
-import { eachDayOfInterval, parseISO, endOfMonth, getDay, format, isSameDay, addDays } from 'date-fns'
+import { eachDayOfInterval, parseISO, endOfMonth, format, getDay, isSameDay, addDays, getISOWeek, differenceInCalendarDays } from 'date-fns'
 
-type Candidate = {
+/* 
+  Tipo de estado por usuario para el backtracking en memoria.
+  Evita queries dentro de la recursión.
+*/
+type UserState = {
     id: number
     name: string
     group: string | null
-    totalShifts: number
-    preferencePoints: number // 0 if none, positive if PREFERENCE
-    blockPoints: number // 0 if none, positive if BLOCK (we treat it as 'cost' to assign)
-    isBlocked: boolean // True if hard block (vacation) or just user preference block? Vacation is hard. Pref block is soft.
+    monthlyLimit: number // De User.monthlyLimit (999 = usar MAX_SHIFTS_DEFAULT)
+    preferenceByDate: Map<string, { type: 'PREFERENCE' | 'BLOCK' | 'LOCK'; points: number }>
+    vacationDates: Set<string>
+    assignedDates: string[] // Se actualiza dinámicamente con push/pop durante backtracking
+    totalShiftsAllTime: number // Para cálculo de equidad global inicial
 }
 
-export async function generateSchedule(month: string) {
-    const start = parseISO(`${month}-01`)
-    const days = eachDayOfInterval({ start, end: endOfMonth(start) })
+const MAX_SHIFTS_DEFAULT = 7
+const MAX_ATTEMPTS = 100000
 
-    // Fetch users with their preferences and vacations for this month
-    const usersData = await prisma.user.findMany({
+export async function generateSchedule(month: string) {
+    // 1. Cargar todos los datos de BD (una sola vez)
+    const start = parseISO(`${month}-01`)
+    const end = endOfMonth(start)
+    const days = eachDayOfInterval({ start, end })
+
+    // Cargar usuarios con todo lo necesario
+    const users = await prisma.user.findMany({
         include: {
-            preferences: {
-                where: {
-                    date: { startsWith: month }
-                }
-            },
             vacations: {
                 where: {
                     date: { startsWith: month },
                     status: 'APPROVED'
                 }
             },
-            // Also need total shifts history for equity (maybe just this month + recent? or all time?)
-            // Prompt says "current month and previous months". For simplicity, let's use all time or just fetch total count.
-            // Using shiftsSlot1/2 count is expensive if we fetch EVERYTHING.
-            // Let's assume equity is based on "total ever" or "total pending".
-            // Since we don't have a "history table", let's approximate with "shifts already assigned this month" + "bias".
-            // Or better, let's just count shifts in this month dynamically as we go, and maybe assume previous months equalised?
-            // Actually, querying "count" of all shifts for user is okay.
+            preferences: {
+                where: {
+                    date: { startsWith: month }
+                }
+            },
+            // Para equidad global, idealmente contaríamos todos los turnos históricos
+            // O los del año en curso. Aquí usamos un count simple.
             _count: {
                 select: { shiftsSlot1: true, shiftsSlot2: true }
             }
         }
     })
 
-    // Prepare initial state
-    // Map existing shifts to respect manual assignments
+    // Guardias YA asignadas manualmente o previamente en este mes
     const existingShifts = await prisma.shift.findMany({
         where: { date: { startsWith: month } }
     })
-    const shiftsMap = new Map(existingShifts.map(s => [s.date, s]))
 
-    // Track assigned shifts count dynamically for THIS month generated so far
-    const temporaryAssignCounts = new Map<number, number>()
-    usersData.forEach(u => temporaryAssignCounts.set(u.id, 0))
-    existingShifts.forEach(s => {
-        temporaryAssignCounts.set(s.slot1UserId, (temporaryAssignCounts.get(s.slot1UserId) || 0) + 1)
-        temporaryAssignCounts.set(s.slot2UserId, (temporaryAssignCounts.get(s.slot2UserId) || 0) + 1)
+    // 2. Construir UserState[] en memoria
+    const userStates: UserState[] = users.map(u => {
+        const prefMap = new Map<string, { type: 'PREFERENCE' | 'BLOCK' | 'LOCK'; points: number }>()
+        u.preferences.forEach(p => {
+            prefMap.set(p.date, { type: p.type as any, points: p.points })
+        })
+
+        const vacSet = new Set<string>()
+        u.vacations.forEach(v => vacSet.add(v.date))
+
+        // Inicializar assignedDates con lo que ya tenga asignado en DB (si re-iniciamos sobre un mes parcial)
+        // PERO: Si la guardia está en existingShifts, la consideraremos "fija" en el algoritmo
+        // y la añadiremos al estado inicial.
+        const alreadyAssigned = existingShifts
+            .filter(s => s.slot1UserId === u.id || s.slot2UserId === u.id)
+            .map(s => s.date)
+
+        return {
+            id: u.id,
+            name: u.name,
+            group: u.group,
+            monthlyLimit: u.monthlyLimit,
+            preferenceByDate: prefMap,
+            vacationDates: vacSet,
+            assignedDates: alreadyAssigned,
+            totalShiftsAllTime: u._count.shiftsSlot1 + u._count.shiftsSlot2
+        }
     })
 
-    // Backtracking function
-    async function backtrack(dayIndex: number): Promise<any | null> {
-        if (dayIndex === days.length) return [] // Success!
+    // Mapa de guardias fijas: date -> Shift
+    // Si existe guardia en DB, se respeta tal cual.
+    const fixedShiftsMap = new Map<string, { slot1UserId: number; slot2UserId: number; id?: number }>()
+    existingShifts.forEach(s => {
+        fixedShiftsMap.set(s.date, { slot1UserId: s.slot1UserId, slot2UserId: s.slot2UserId, id: s.id })
+    })
+
+    let attempts = 0
+
+    // 3. Backtracking
+    function backtrack(dayIndex: number): Array<{ date: string; slot1UserId: number; slot2UserId: number }> | null {
+        if (attempts++ > MAX_ATTEMPTS) return null
+        if (dayIndex === days.length) return [] // Éxito
 
         const dateObj = days[dayIndex]
-        const date = format(dateObj, 'yyyy-MM-dd')
+        const dateStr = format(dateObj, 'yyyy-MM-dd')
 
-        // Skip if date has 2 manually/previously assigned shifts
-        const existingSync = shiftsMap.get(date)
-        if (existingSync) {
-            const result = await backtrack(dayIndex + 1)
-            if (result) return [{ date, slot1UserId: existingSync.slot1UserId, slot2UserId: existingSync.slot2UserId }, ...result]
-            return null // Should not happen if manual shifts are valid, but keep safe
+        // A) Si el día ya tiene guardia fija en DB, la usamos y avanzamos
+        if (fixedShiftsMap.has(dateStr)) {
+            const fixed = fixedShiftsMap.get(dateStr)!
+            // Nota: Los usuarios ya tienen esta fecha en assignedDates desde la inicialización.
+            // No necesitamos hacer push/pop aquí porque es inmutable para el algoritmo.
+            const res = backtrack(dayIndex + 1)
+            if (res) return [{ date: dateStr, ...fixed }, ...res]
+            return null
         }
 
-        // Build Candidates list
-        const candidates: Candidate[] = usersData.map((u: any) => {
-            const pref = u.preferences.find((p: any) => p.date === date)
-            const vacation = u.vacations.find((v: any) => v.date === date)
+        // B) Buscar candidatos válidos
+        // Filtrar usuarios que rompen Hard Constraints
+        const validUsers = userStates.filter(u => checkHardConstraints(u, dateStr, dateObj))
 
-            // Points logic: 
-            // PREFERENCE type: points positive.
-            // BLOCK type: points positive (but used as penalty).
-            let pPoints = 0
-            let bPoints = 0
+        // Ordenar candidatos (Soft Constraints) - Criterios de Preferencia
+        // 1. Preferencia declarada (PREFERENCE): Mayor prioridad.
+        // 2. Equidad: Se prioriza a quien menos guardias tenga (Total histórico + Asignadas este mes).
+        // 3. Evitar bloqueos (BLOCK): Se penaliza a quien prefirió no trabajar.
 
-            if (pref) {
-                if (pref.type === 'PREFERENCE') pPoints = pref.points
-                if (pref.type === 'BLOCK') bPoints = pref.points
-            }
-
-            return {
-                id: u.id,
-                name: u.name,
-                group: u.group as string | null,
-                totalShifts: (u._count.shiftsSlot1 + u._count.shiftsSlot2) + (temporaryAssignCounts.get(u.id) || 0), // Global equity + local
-                preferencePoints: pPoints,
-                blockPoints: bPoints,
-                isBlocked: !!vacation // Approved vacation is hard block
-            }
+        validUsers.sort((a, b) => {
+            const scoreA = calculateScore(a, dateStr)
+            const scoreB = calculateScore(b, dateStr)
+            return scoreB - scoreA // Mayor score primero
         })
 
-        // Filter Hard Constraints Step 1: Vacation
-        let validCandidates = candidates.filter(c => !c.isBlocked)
+        // Probar parejas (Combinaciones de candidatos válidos)
+        for (let i = 0; i < validUsers.length; i++) {
+            for (let j = i + 1; j < validUsers.length; j++) {
+                const u1 = validUsers[i]
+                const u2 = validUsers[j]
 
-        // Filter Hard Constraints Step 2: Rules (Separation, etc) - Wait, separation depends on dynamic assignment.
-        // We can check some rules efficiently here or inside the pair loop.
-        // Doing strictly inside loop is safer.
+                // Validar Conflicto de Pareja (Reglas de Grupo)
+                if (!validatePair(u1, u2)) continue
 
-        // SORTING (The core of the logic)
-        // Sort order:
-        // 1. Preference Points (High to Low)
-        // 2. Equity (Total Shifts Low to High)
-        // 3. Block Points (Low to High) - i.e. prefer NOT blocking, or lowest block points used.
-        //    Wait, "Assign to user with LESS block points consumed THIS MONTH".
-        //    We need to track "Block Points Consumed" state?
-        //    Prompt: "Priority 4: Avoid blocked days. If inevitable, assign to user with LESS points of blockage total used THIS month".
-        //    This implies we need to track "points ignored" accumulator.
-        //    Implementation simplification: Sort by "Is this day blocked?" (BlockPoints Asc).
-        //    If both blocked, tie-break by equity.
-        //    Let's stick to the prompt's explicit priorities.
+                // Intentar asignar (Marcar fecha en estado temporal)
+                u1.assignedDates.push(dateStr)
+                u2.assignedDates.push(dateStr)
 
-        // Priority 2: Preference Declarada
-        // Priority 3: Equidad (shifts count)
-        // Priority 4: Block Avoidance (Try to pick where blockPoints is 0. If >0, pick lowest.)
+                // Recursión: Continuar al siguiente día
+                const res = backtrack(dayIndex + 1)
 
-        validCandidates.sort((a, b) => {
-            // 1. Preference presence (Points > 0)
-            const aPref = a.preferencePoints > 0
-            const bPref = b.preferencePoints > 0
-
-            if (aPref && !bPref) return -1
-            if (!aPref && bPref) return 1
-
-            if (aPref && bPref) {
-                // Both have preference: compare points value DESC
-                if (b.preferencePoints !== a.preferencePoints) return b.preferencePoints - a.preferencePoints
-                // Tie: Equity (Total shifts) ASC
-                return a.totalShifts - b.totalShifts
-            }
-
-            // Neither has preference:
-            // 2. Equity (Total shifts) ASC
-            // Wait, Prompt says "Priority 3: Equity". "Priority 4: Blocks".
-            // This means we prefer a user with LOW SHIFTS + BLOCKED DAY over a user with HIGH SHIFTS + FREE DAY?
-            // "Priority 4... Avoid assigning on blocked days."
-            // This usually implies Block Avoidance > Equity?
-            // "Priority 3 is Equity... Priority 4 is Avoid Blocks".
-            // That means we fill purely by Equity, IGNORING blocks, until we hit Priority 4?
-            // No, "Strict Priority".
-            // Order: 1. Rules (Rest/Limits). 2. Preferences. 3. Equity. 4. Avoid Blocks.
-            // Actually, "Avoid Blocks" is Priority 4. This implies "Equity" (P3) is more important than "Avoid Blocks" (P4)?
-            // Usually "Avoid Blocks" is near hard constraint.
-            // Let's re-read carefully: "Priority 4... Avoid assigning on blocked days."
-            // "Priority 5... Guarantee coverage".
-            // Usually, if a day is blocked, we SKIP it unless forced.
-            // Algorithm Step 4 says: "For days without preferences... select users with FEWEST SHIFTS... AND NOT HAVE DAY BLOCKED."
-            // Ah! So Equity Logic excludes Blocked users first.
-            // So structure is:
-            //   Group A: Preferent Users (Sorted by points -> equity)
-            //   Group B: Non-Preferent, Non-Blocked Users (Sorted by equity)
-            //   Group C: Blocked Users (Sorted by "points of block used" -> equity) [Used only if needed to cover]
-
-            // Priority 4: Block Avoidance
-            // Lower block points is better (0 is best, 1 is better than 10).
-            if (a.blockPoints !== b.blockPoints) {
-                return a.blockPoints - b.blockPoints
-            }
-
-            // Both non-blocked (or both blocked):
-            // Sort by Equity (Total Shifts)
-            if (a.totalShifts !== b.totalShifts) return a.totalShifts - b.totalShifts
-
-            // Tie-breaker: Random or Name
-            return 0
-        })
-
-        // Try pairs
-        for (let i = 0; i < validCandidates.length; i++) {
-            for (let j = i + 1; j < validCandidates.length; j++) {
-                const u1 = validCandidates[i]
-                const u2 = validCandidates[j]
-
-                // Validate Pair (Hard Rules)
-                // Use validateDay logic but check simpler things locally first if improved perf needed.
-                // We must use 'validateAssignment' for the "Separation" and "Max Limits" rules which depend on DB state.
-                // BUT 'validateAssignment' reads from DB. Our temporary state is in RAM (temporaryAssignCounts).
-                // Existing validateAssignment reads 'prisma.shift'. It won't see our recursive assignments.
-                // CRITICAL: We need a version of validateAssignment that accepts the "current projected schedule".
-                // Since this recursion is deep, we might need to mock or pass "assignedDates" to validation.
-
-                // For now, let's trust the "backtracking" flow. We must inject the NEW shift into db? No, too slow.
-                // We need to validate "Separation" and "Limits" using local history.
-
-                // --- Local Validation ---
-
-                // Let's implement lightweight check here.
-                if (!checkSeparation(u1.id, date, existingShifts)) continue
-                if (!checkSeparation(u2.id, date, existingShifts)) continue
-
-                // Check limits (Thurs/Fri/Weekend)
-                // Need to count user's shifts in 'existingShifts' + 'assignmentHistory'.
-                // Since we don't pass 'assignmentHistory' down efficiently (only counts), we can't fully validate limits without tracking DATES.
-                // Let's assume we can simply track counts of THURS/FRI/WEEKEND per user in a Map.
-
-                // SKIP strict limit check in this simplified replacement for now, or just trust the counts
-                // if we don't track detailed dates.
-                // Use a helper: `validateLimitsLocal(u, date, currentCounts)`
-
-                // Assume we accept effective standard logic:
-
-                // 2. Validate Day (Group conflict, etc) - Stateles
-                const dayErrs = await validateDay(u1.id, u2.id, date)
-                if (dayErrs.length > 0) continue
-
-                // Update temporary state
-                temporaryAssignCounts.set(u1.id, (temporaryAssignCounts.get(u1.id) || 0) + 1)
-                temporaryAssignCounts.set(u2.id, (temporaryAssignCounts.get(u2.id) || 0) + 1)
-
-                // Add to local 'existingShifts' for next recursion?
-                // We need to push this shift to a list to check separation in next steps.
-                existingShifts.push({ date, slot1UserId: u1.id, slot2UserId: u2.id } as any)
-
-                const result = await backtrack(dayIndex + 1)
-
-                if (result) {
-                    return [{ date, slot1UserId: u1.id, slot2UserId: u2.id }, ...result]
+                if (res) {
+                    // Éxito: Retornar solución construida
+                    return [{ date: dateStr, slot1UserId: u1.id, slot2UserId: u2.id }, ...res]
                 }
 
-                // Backtrack
-                existingShifts.pop()
-                temporaryAssignCounts.set(u1.id, (temporaryAssignCounts.get(u1.id) || 0) - 1)
-                temporaryAssignCounts.set(u2.id, (temporaryAssignCounts.get(u2.id) || 0) - 1)
+                // Backtrack: Si el camino falla, deshacer los cambios y probar siguiente pareja
+                u1.assignedDates.pop()
+                u2.assignedDates.pop()
             }
         }
 
         return null
     }
 
-    // Helper for Separation (Looking at past and future existing shifts)
-    function checkSeparation(userId: number, targetDate: string, currentShifts: any[]) {
-        const target = parseISO(targetDate)
-        // Check 2 days before and after
-        const forbidden = [
-            format(addDays(target, -1), 'yyyy-MM-dd'),
-            format(addDays(target, -2), 'yyyy-MM-dd'),
-            format(addDays(target, 1), 'yyyy-MM-dd'),
-            format(addDays(target, 2), 'yyyy-MM-dd')
-        ]
+    // --- Helpers en memoria ---
 
-        for (const s of currentShifts) {
-            if (forbidden.includes(s.date)) {
-                if (s.slot1UserId === userId || s.slot2UserId === userId) return false
-            }
+    /**
+     * Verifica TODAS las restricciones estrictas (Hard Constraints) para un usuario individual.
+     * Si retorna false, el usuario NO puede ser asignado a 'dateObj'.
+     */
+    function checkHardConstraints(u: UserState, dateStr: string, dateObj: Date): boolean {
+        // 1. Vacaciones: Si tiene vacación aprobada, descartar.
+        if (u.vacationDates.has(dateStr)) return false
+
+        // 2. Límite mensual: No exceder el número máximo de guardias del usuario.
+        const limit = u.monthlyLimit === 999 ? MAX_SHIFTS_DEFAULT : u.monthlyLimit
+        if (u.assignedDates.length >= limit) return false
+
+        // 3. Separación mínima: 2 días completos de descanso entre guardias.
+        // Se comprueba si hay alguna guardia asignada a menos de 3 días de distancia.
+        const hasCloseShift = u.assignedDates.some(d => Math.abs(differenceInCalendarDays(parseISO(d), dateObj)) < 3)
+        if (hasCloseShift) return false
+
+        // 4. Límites por día de semana
+        const dayOfWeek = getDay(dateObj) // 0=Domingo, ..., 4=Jueves, 5=Viernes, 6=Sábado
+
+        // Jueves: Máximo 1 al mes
+        if (dayOfWeek === 4) {
+            const thursdays = u.assignedDates.filter(d => getDay(parseISO(d)) === 4).length
+            if (thursdays >= 1) return false
         }
+
+        // Viernes: Máximo 1 al mes
+        if (dayOfWeek === 5) {
+            const fridays = u.assignedDates.filter(d => getDay(parseISO(d)) === 5).length
+            if (fridays >= 1) return false
+        }
+
+        // Fines de semana: Máximo 2 al mes
+        const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6
+        if (isWeekendDay) {
+            // Contar fines de semana únicos (usando número de semana ISO como ID)
+            const myWeekends = new Set<number>()
+            u.assignedDates.forEach(d => {
+                const dObj = parseISO(d)
+                const dDay = getDay(dObj)
+                if (dDay === 0 || dDay === 6) {
+                    myWeekends.add(getISOWeek(dObj))
+                }
+            })
+
+            const currentWeek = getISOWeek(dateObj)
+            // Si es un fin de semana nuevo y ya llevo 2, bloquear.
+            if (!myWeekends.has(currentWeek) && myWeekends.size >= 2) return false
+        }
+
         return true
     }
 
-    const solution = await backtrack(0)
-    return solution
+    /**
+     * Valida la compatibilidad entre dos usuarios seleccionados (Hard Constraints de Pareja).
+     */
+    function validatePair(u1: UserState, u2: UserState): boolean {
+        // 1. Conflictos de Grupo: Mismo grupo no puede coincidir (salvo STANDARD)
+        if (u1.group && u2.group && u1.group === u2.group && u1.group !== 'STANDARD') return false
+
+        // 2. Conflicto MAMA vs URGENCIAS: Incompatibles entre sí
+        const g1 = u1.group
+        const g2 = u2.group
+        if ((g1 === 'MAMA' && g2 === 'URGENCIAS') || (g1 === 'URGENCIAS' && g2 === 'MAMA')) return false
+
+        return true
+    }
+
+    function calculateScore(u: UserState, dateStr: string): number {
+        let score = 0
+        const pref = u.preferenceByDate.get(dateStr)
+
+        // A. Preferencia declarada (Alta prioridad)
+        if (pref && pref.type === 'PREFERENCE') {
+            score += 1000 + pref.points // Gran boost
+        }
+
+        // B. Evitar Bloqueos (Penalización)
+        if (pref && pref.type === 'BLOCK') {
+            score -= (1000 + pref.points) // Gran penalización
+        }
+
+        // C. Equidad (Menos guardias -> Más score)
+        // Usar total shifts (histórico + actual)
+        // Multiplicador negativo pequeño para desempatar
+        const total = u.totalShiftsAllTime + u.assignedDates.length
+        score -= (total * 10)
+
+        return score
+    }
+
+    // --- Ejecución ---
+    const result = backtrack(0)
+    return result
 }

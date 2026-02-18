@@ -65,13 +65,10 @@ export async function validateAssignment(userId: number, date: string, month: st
     errors.push({ code: 'VACATION_DAY', message: 'User has an approved vacation on this date' })
   }
 
-  // 2) Separation between shifts: min 2 FULL days between shifts.
-  // Example: Shift on 5th. Next allowed on 8th? (5th + 1 + 2 = 8th?)
-  // Prompt: "Min 2 days of rest... if shift on day 5, next cannot be before day 8".
-  // So gap is 6, 7.  (Day 5 shift -> Rest 6, 7 -> Shift 8 ok).
-  // Distance >= 3 days? (8 - 5 = 3). Yes.
-  // Check range [date-2, date+2] excluding date itself.
-
+  // 2) Separación mínima entre guardias:
+  // Se requieren al menos 2 días completos de descanso.
+  // Ejemplo: Si tiene guardia el día 5, la siguiente permitida es el día 8 (5 + 1 + 2 = 8).
+  // Ventana de comprobación: [date-2, date+2].
   const from = format(addDays(targetDate, -2), 'yyyy-MM-dd')
   const to = format(addDays(targetDate, 2), 'yyyy-MM-dd')
   const nearby = await prisma.shift.findMany({ where: { date: { gte: from, lte: to } } })
@@ -86,7 +83,7 @@ export async function validateAssignment(userId: number, date: string, month: st
 
   // 3) Strict Limits per month
   const shifts = await prisma.shift.findMany({ where: { date: { startsWith: month } } })
-  const userShifts = shifts.filter(s => s.slot1UserId === userId || s.slot2UserId === userId && s.date !== date) // Exclude current if editing? assume new assignment
+  const userShifts = shifts.filter(s => (s.slot1UserId === userId || s.slot2UserId === userId) && s.date !== date) // Exclude current if editing? assume new assignment
 
   // Count existing shifts + potential new one
   // WE DO NOT count the current date being validated provided it's satisfied by "s.date !== date" above if we are re-validating.
@@ -138,9 +135,11 @@ export async function validateAssignment(userId: number, date: string, month: st
   const isTargetFriday = targetDay === 5
   const isTargetWeekend = targetDay === 0 || targetDay === 6
 
+  // Verificar límite de Jueves (Máximo 1 al mes)
   if (isTargetThursday && thursdays >= 1) {
     errors.push({ code: 'THURSDAY_LIMIT', message: 'User would exceed 1 Thursday per month' })
   }
+  // Verificar límite de Viernes (Máximo 1 al mes)
   if (isTargetFriday && fridays >= 1) {
     errors.push({ code: 'FRIDAY_LIMIT', message: 'User would exceed 1 Friday per month' })
   }
