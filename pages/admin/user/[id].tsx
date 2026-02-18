@@ -1,14 +1,45 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
+import { format, parseISO, startOfMonth, getDaysInMonth, getDay } from 'date-fns'
+import { es } from 'date-fns/locale'
+
+type Vacation = {
+  id: number
+  userId: number
+  date: string
+  status: string
+}
 
 export default function AdminUser() {
   const router = useRouter()
   const { id } = router.query
   const [user, setUser] = useState<any>(null)
   const [form, setForm] = useState<any>({ name: '', email: '', role: 'USER', group: '', password: '' })
+  const [month, setMonth] = useState(() => {
+    const d = new Date()
+    return format(d, 'yyyy-MM')
+  })
+  const [vacations, setVacations] = useState<Vacation[]>([])
 
-  useEffect(() => { if (id) fetchUser() }, [id])
-  async function fetchUser() { const res = await fetch(`/api/users/${id}`); const data = await res.json(); setUser(data); setForm({ ...form, ...data }) }
+  useEffect(() => { if (id) { fetchUser(); fetchVacations() } }, [id, month])
+
+  async function fetchUser() {
+    const res = await fetch(`/api/users/${id}`)
+    const data = await res.json()
+    setUser(data)
+    setForm((prev: any) => ({ ...prev, ...data }))
+  }
+
+  async function fetchVacations() {
+    if (!id) return
+    const token = localStorage.getItem('token')
+    const res = await fetch(`/api/vacations?month=${month}&userId=${id}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (res.ok) {
+      setVacations(await res.json())
+    }
+  }
 
   async function save() {
     if (!confirm('Guardar cambios?')) return
@@ -18,6 +49,30 @@ export default function AdminUser() {
   }
 
   if (!user) return <div className="p-4 bg-[var(--bg-main)] text-white h-screen">Cargando...</div>
+
+  const start = startOfMonth(parseISO(month + '-01'))
+  const daysInMonth = getDaysInMonth(start)
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  const firstWeekday = getDay(start)
+  const leadingBlanks = (firstWeekday + 6) % 7
+
+  const handlePrev = () => {
+    const [y, m] = month.split('-')
+    let ny = Number(y)
+    let nm = Number(m) - 1
+    if (nm < 1) { nm = 12; ny -= 1 }
+    const mm = String(nm).padStart(2, '0')
+    setMonth(`${ny}-${mm}`)
+  }
+
+  const handleNext = () => {
+    const [y, m] = month.split('-')
+    let ny = Number(y)
+    let nm = Number(m) + 1
+    if (nm > 12) { nm = 1; ny += 1 }
+    const mm = String(nm).padStart(2, '0')
+    setMonth(`${ny}-${mm}`)
+  }
 
   return (
     <div className="p-6 min-h-screen pb-28 bg-[var(--bg-main)]">
@@ -72,6 +127,56 @@ export default function AdminUser() {
           <button onClick={() => router.push('/admin')} className="flex-1 bg-slate-800 text-slate-400 font-bold p-4 rounded-2xl border border-white/5 transition-all">
             Cancelar
           </button>
+        </div>
+      </div>
+
+      {/* Calendario de vacaciones del usuario (solo lectura) */}
+      <div className="mt-8 mobile-card max-w-md mx-auto !p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Vacaciones del usuario</h2>
+          <div className="flex items-center gap-2">
+            <button onClick={handlePrev} className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-xs font-semibold text-white capitalize">
+              {format(start, 'MMMM yyyy', { locale: es })}
+            </span>
+            <button onClick={handleNext} className="p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-slate-400">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1.5 text-[10px] text-slate-500 font-bold">
+          {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => (
+            <div key={d} className="text-center">{d}</div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-1.5">
+          {Array.from({ length: leadingBlanks }).map((_, i) => <div key={`b-${i}`} />)}
+          {days.map(d => {
+            const dateObj = new Date(start.getFullYear(), start.getMonth(), d)
+            const dateStr = format(dateObj, 'yyyy-MM-dd')
+            const vac = vacations.find(v => v.date === dateStr)
+            const isVacation = !!vac
+            const bgClass = isVacation ? 'bg-emerald-500/30 border-emerald-400/80' : 'bg-white/5 border-white/5'
+
+            return (
+              <div
+                key={d}
+                className={`aspect-square rounded-xl border flex flex-col items-center justify-center text-[11px] text-slate-100 ${bgClass}`}
+              >
+                {d}
+                {isVacation && (
+                  <span className="mt-0.5 text-[8px] font-bold text-emerald-100">VAC</span>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
     </div>

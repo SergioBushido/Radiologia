@@ -3,6 +3,9 @@ import { parseISO, format, addDays, getDay, isSameMonth, endOfMonth, eachDayOfIn
 
 type ValidationError = { code: string; message: string }
 
+// Si User.monthlyLimit = 999, se usa este límite por defecto (mismo criterio que el generador).
+const MAX_SHIFTS_DEFAULT = 7
+
 const GROUPS = {
   MAMA: ['Muñoz', 'Cabrera', 'De Armas'],
   URGENCIAS: ['Marichal', 'Fdez del Castillo', 'Núñez']
@@ -84,6 +87,22 @@ export async function validateAssignment(userId: number, date: string, month: st
   // 3) Strict Limits per month
   const shifts = await prisma.shift.findMany({ where: { date: { startsWith: month } } })
   const userShifts = shifts.filter(s => (s.slot1UserId === userId || s.slot2UserId === userId) && s.date !== date) // Exclude current if editing? assume new assignment
+
+  // 3.0) Límite mensual de guardias por usuario (User.monthlyLimit)
+  // - Si el usuario ya está asignado en esa fecha, no cuenta como "nueva" guardia.
+  // - Si no lo está, la validación debe impedir superar el límite (salvo asignación forzada en el endpoint).
+  const effectiveMonthlyLimit = (user as any).monthlyLimit === 999 ? MAX_SHIFTS_DEFAULT : Number((user as any).monthlyLimit)
+  if (Number.isFinite(effectiveMonthlyLimit) && effectiveMonthlyLimit >= 0) {
+    const existingShiftOnDate = shifts.find(s => s.date === date)
+    const userAlreadyAssignedThatDay = !!existingShiftOnDate && (existingShiftOnDate.slot1UserId === userId || existingShiftOnDate.slot2UserId === userId)
+    const willAddNewShift = !userAlreadyAssignedThatDay
+    if (willAddNewShift && userShifts.length >= effectiveMonthlyLimit) {
+      errors.push({
+        code: 'MONTHLY_LIMIT',
+        message: `El usuario superaría su límite mensual de guardias (${effectiveMonthlyLimit})`
+      })
+    }
+  }
 
   // Count existing shifts + potential new one
   // WE DO NOT count the current date being validated provided it's satisfied by "s.date !== date" above if we are re-validating.

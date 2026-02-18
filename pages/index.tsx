@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/router'
 import Link from 'next/link'
 import Calendar from '../components/Calendar'
+import Board from '../components/Board'
 import { useAuth } from '../lib/useAuth'
 
 import Logo from '../components/Logo'
@@ -29,6 +30,9 @@ export default function Home() {
         </Link>
       </div>
       <Calendar />
+      <div className="mt-8">
+        <Board />
+      </div>
     </div>
   )
 }

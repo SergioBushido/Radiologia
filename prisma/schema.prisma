@@ -1,0 +1,129 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String    @map("passwordHash")
+  role         String    @default("USER")
+  group        String?
+  monthlyLimit Int       @default(999)
+  createdAt    DateTime  @default(now()) @map("createdAt")
+
+  shiftsSlot1    Shift[]     @relation("Slot1User")
+  shiftsSlot2    Shift[]     @relation("Slot2User")
+  blocks         Block[]
+  preferences    ShiftPreference[]
+  vacations      Vacation[]
+  messagesSent   Message[]   @relation("Sender")
+  messagesReceived Message[]  @relation("Receiver")
+  boardPosts     BoardPost[]
+  auditLogs      AuditLog[]
+
+  @@map("User")
+}
+
+model Shift {
+  id            Int      @id @default(autoincrement())
+  date          String   @unique
+  slot1UserId   Int      @map("slot1UserId")
+  slot2UserId   Int      @map("slot2UserId")
+  forced        Boolean  @default(false)
+  forcedReason  String?
+  createdAt     DateTime @default(now()) @map("createdAt")
+
+  slot1User User @relation("Slot1User", fields: [slot1UserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  slot2User User @relation("Slot2User", fields: [slot2UserId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@map("Shift")
+}
+
+model Block {
+  id     Int    @id @default(autoincrement())
+  userId Int    @map("userId")
+  month  String
+  date   String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([userId, month])
+  @@map("Block")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  actorUserId Int      @map("actorUserId")
+  action      String
+  details     String?
+  createdAt   DateTime @default(now()) @map("createdAt")
+
+  actor User @relation(fields: [actorUserId], references: [id])
+
+  @@map("AuditLog")
+}
+
+model ShiftPreference {
+  id     Int    @id @default(autoincrement())
+  userId Int    @map("userId")
+  date   String
+  type   String // PREFERENCE, BLOCK, LOCK
+  points Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("ShiftPreference")
+}
+
+model Vacation {
+  id     Int    @id @default(autoincrement())
+  userId Int    @map("userId")
+  date   String
+  status String @default("APPROVED") // APPROVED, PENDING
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, date])
+  @@map("Vacation")
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+  senderId   Int      @map("senderId")
+  receiverId Int      @map("receiverId")
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now()) @map("createdAt")
+
+  sender   User @relation("Sender", fields: [senderId], references: [id])
+  receiver User @relation("Receiver", fields: [receiverId], references: [id])
+
+  @@map("Message")
+}
+
+model BoardPost {
+  id        Int        @id @default(autoincrement())
+  userId    Int        @map("userId")
+  content   String
+  parentId  Int?       @map("parentId")
+  createdAt DateTime   @default(now()) @map("createdAt")
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  parent  BoardPost?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  replies BoardPost[] @relation("Replies")
+
+  @@index([parentId])
+  @@index([createdAt])
+  @@map("BoardPost")
+}
+

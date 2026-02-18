@@ -26,8 +26,9 @@ export default function Calendar() {
   const [showDayEditor, setShowDayEditor] = useState(false)
 
   const [preferences, setPreferences] = useState<any[]>([])
+  const [vacations, setVacations] = useState<any[]>([])
 
-  useEffect(() => { fetchShifts() }, [month])
+  useEffect(() => { fetchShifts() }, [month, user])
   async function fetchShifts() {
     const token = localStorage.getItem('token')
     const headers: any = {}
@@ -49,6 +50,17 @@ export default function Calendar() {
       // Fetch preferences
       const pres = await fetch(`/api/preferences?month=${month}`, { headers })
       if (pres.ok) setPreferences(await pres.json())
+
+      // Fetch vacations: admin sees all, user sees only their own
+      if (user?.role === 'ADMIN') {
+        // Admin: fetch all vacations for the month (no userId specified)
+        const vacRes = await fetch(`/api/vacations?month=${month}`, { headers })
+        if (vacRes.ok) setVacations(await vacRes.json())
+      } else {
+        // User: fetch only their own vacations
+        const vacRes = await fetch(`/api/vacations?month=${month}`, { headers })
+        if (vacRes.ok) setVacations(await vacRes.json())
+      }
     }
   }
 
@@ -70,7 +82,7 @@ export default function Calendar() {
   const handleNext = () => { const [y, m] = month.split('-'); let ny = Number(y); let nm = Number(m) + 1; if (nm > 12) { nm = 1; ny += 1 } const mm = String(nm).padStart(2, '0'); setMonth(`${ny}-${mm}`) }
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--bg-main)] overflow-hidden">
+    <div className="flex flex-col bg-[var(--bg-main)] min-h-[600px]">
       {/* Header Compacto */}
       <div className="flex-none p-4 pb-2">
         <div className="flex items-center justify-between bg-[var(--bg-card)] backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-white/5 max-w-lg mx-auto w-full">
@@ -140,17 +152,25 @@ export default function Calendar() {
                     (() => {
                       const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
                       const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
+                      const myVacation = vacations.find(v => v.date === date && v.userId === user?.id)
+                      const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
 
                       return (
-                        <div className="flex gap-1 justify-center">
+                        <div className="flex gap-1 justify-center flex-wrap">
+                          {myVacation && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="Mis vacaciones"></div>
+                          )}
                           {myPref && (
                             <div className={`w-1.5 h-1.5 rounded-full ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
                           )}
-                          {/* Admin sees a dot for others' requests */}
+                          {/* Admin sees dots for others' vacations and requests */}
+                          {user?.role === 'ADMIN' && otherVacations.length > 0 && (
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={`${otherVacations.length} vacaciones`}></div>
+                          )}
                           {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
                             <div className="w-1.5 h-1.5 rounded-full bg-orange-400" title={`${otherPrefs.length} solicitudes`}></div>
                           )}
-                          {!myPref && (!otherPrefs.length || user?.role !== 'ADMIN') && (
+                          {!myPref && !myVacation && (!otherPrefs.length || user?.role !== 'ADMIN') && (!otherVacations.length || user?.role !== 'ADMIN') && (
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
                           )}
                         </div>
@@ -174,13 +194,20 @@ export default function Calendar() {
                     <div className="text-[10px] text-slate-400 dark:text-slate-600 text-center italic py-1">Libre</div>
                   )}
 
-                  {/* Show MY preference if no shift */}
+                  {/* Show MY preference and vacations if no shift */}
                   {!s && (() => {
                     const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
                     const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
+                    const myVacation = vacations.find(v => v.date === date && v.userId === user?.id)
+                    const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
 
                     return (
                       <div className="flex flex-col gap-0.5">
+                        {myVacation && (
+                          <div className="text-[10px] font-bold px-1 rounded border mb-0.5 bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30">
+                            VAC
+                          </div>
+                        )}
                         {myPref && (
                           <div className={`text-[10px] font-bold px-1 rounded border mb-0.5 ${myPref.type === 'LOCK'
                             ? 'bg-slate-800 text-white border-slate-600'
@@ -189,6 +216,11 @@ export default function Calendar() {
                               : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
                             }`}>
                             {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'Puntos' : 'Solicitado'} {myPref.type !== 'LOCK' && `${myPref.points}pts`}
+                          </div>
+                        )}
+                        {user?.role === 'ADMIN' && otherVacations.length > 0 && (
+                          <div className="text-[10px] font-bold px-1 rounded border bg-green-50 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20">
+                            {otherVacations.length} VAC
                           </div>
                         )}
                         {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
@@ -212,7 +244,9 @@ export default function Calendar() {
           shift={shifts.find(s => s.date === selectedDate)}
           usersMap={usersMap}
           userRole={user?.role}
+          currentUserId={user?.id}
           preferences={preferences.filter(p => p.date === selectedDate)}
+          vacations={vacations.filter(v => v.date === selectedDate)}
           onClose={() => setShowDetailModal(false)}
           onEdit={() => {
             // If manual edit of shift
@@ -255,6 +289,7 @@ export default function Calendar() {
             setShowBlockModal(true)
           }}
           onPreferencesUpdated={fetchShifts}
+          onVacationsUpdated={fetchShifts}
         />
       )}
 

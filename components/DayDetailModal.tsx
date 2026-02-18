@@ -7,7 +7,9 @@ type Props = {
     shift: { slot1UserId: number, slot2UserId: number } | undefined
     usersMap: Record<number, string>
     userRole?: string
+    currentUserId?: number
     preferences?: any[]
+    vacations?: any[]
     onClose: () => void
     onEdit: () => void
     onBlock: () => void
@@ -15,9 +17,10 @@ type Props = {
     disableLock?: boolean
     onPreferencesUpdated?: () => void
     onEditPreference?: (userId: number) => void
+    onVacationsUpdated?: () => void
 }
 
-export default function DayDetailModal({ date, shift, usersMap, userRole, preferences, onClose, onEdit, onBlock, onLock, disableLock, onPreferencesUpdated, onEditPreference }: Props) {
+export default function DayDetailModal({ date, shift, usersMap, userRole, currentUserId, preferences, vacations = [], onClose, onEdit, onBlock, onLock, disableLock, onPreferencesUpdated, onEditPreference, onVacationsUpdated }: Props) {
     const d = parseISO(date)
     const { addToast } = useToast()
 
@@ -35,6 +38,39 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, prefer
             onPreferencesUpdated?.()
         } else {
             addToast('Error al eliminar', 'error')
+        }
+    }
+
+    async function toggleVacation(userId: number) {
+        const token = localStorage.getItem('token')
+        const existing = vacations.find(v => v.userId === userId)
+        
+        if (existing) {
+            // Delete vacation
+            const res = await fetch(`/api/vacations?date=${date}&userId=${userId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            })
+            if (res.ok) {
+                addToast('Vacación eliminada', 'success')
+                onVacationsUpdated?.()
+            } else {
+                addToast('Error al eliminar vacación', 'error')
+            }
+        } else {
+            // Create vacation
+            const res = await fetch('/api/vacations', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify({ date, userId })
+            })
+            if (res.ok) {
+                addToast('Vacación añadida', 'success')
+                onVacationsUpdated?.()
+            } else {
+                const err = await res.json()
+                addToast(err.error || 'Error al añadir vacación', 'error')
+            }
         }
     }
 
@@ -72,6 +108,32 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, prefer
 
 
 
+                    {/* Vacations Section */}
+                    {vacations && vacations.length > 0 && (
+                        <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-white/5">
+                            <h3 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em]">Vacaciones</h3>
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                                {vacations.map(vac => (
+                                    <div key={vac.id} className="flex justify-between items-center p-2.5 bg-green-50 dark:bg-green-500/10 rounded-xl border border-green-200 dark:border-green-500/20 text-xs">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-green-700 dark:text-green-300">{usersMap[vac.userId] || `Usuario ${vac.userId}`}</span>
+                                            <span className="text-[10px] text-green-600 dark:text-green-400">Vacaciones</span>
+                                        </div>
+                                        {(userRole === 'ADMIN' || vac.userId === currentUserId) && (
+                                            <button
+                                                onClick={() => toggleVacation(vac.userId)}
+                                                className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                title="Eliminar vacación"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Admin View: Show ALL preferences */}
                     {userRole === 'ADMIN' && preferences && preferences.length > 0 && (
                         <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-white/5">
@@ -94,6 +156,31 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, prefer
                                         </button>
                                     </div>
                                 ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Admin: Add vacation for any user */}
+                    {userRole === 'ADMIN' && (
+                        <div className="pt-2 border-t border-slate-100 dark:border-white/5">
+                            <h3 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2">Gestionar vacaciones</h3>
+                            <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                {Object.entries(usersMap).map(([userId, name]) => {
+                                    const hasVacation = vacations.some(v => v.userId === Number(userId))
+                                    return (
+                                        <button
+                                            key={userId}
+                                            onClick={() => toggleVacation(Number(userId))}
+                                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
+                                                hasVacation
+                                                    ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-500/30'
+                                                    : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-green-50 dark:hover:bg-green-500/10'
+                                            }`}
+                                        >
+                                            {hasVacation ? '✓ ' : ''}{name}
+                                        </button>
+                                    )
+                                })}
                             </div>
                         </div>
                     )}
