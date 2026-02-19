@@ -26,7 +26,6 @@ export default function Board() {
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
   const [replyContent, setReplyContent] = useState('')
   const [loading, setLoading] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchPosts()
@@ -35,9 +34,6 @@ export default function Board() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [posts])
 
   async function fetchPosts() {
     const token = localStorage.getItem('token')
@@ -116,8 +112,8 @@ export default function Board() {
     <div className="w-full max-w-4xl mx-auto px-2 sm:px-4 md:px-6 py-4 md:py-6">
       <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl md:rounded-3xl border border-slate-200/50 dark:border-white/10 shadow-xl dark:shadow-2xl overflow-hidden transition-all duration-300">
         {/* Header */}
-        <div className="relative bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 p-4 sm:p-5 md:p-6 text-white overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/50 to-purple-600/50 opacity-50"></div>
+        <div className="relative bg-gradient-to-br from-medical-600 via-medical-700 to-teal-700 p-4 sm:p-5 md:p-6 text-white overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-medical-600/50 to-teal-600/50 opacity-50"></div>
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
           <div className="relative z-10">
             <h2 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2 sm:gap-3 mb-1 sm:mb-2">
@@ -126,18 +122,18 @@ export default function Board() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-100">Tablón de Anuncios</span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-medical-100">Tablón de Anuncios</span>
             </h2>
-            <p className="text-xs sm:text-sm text-indigo-100/90 font-medium">Comparte información y comunícate con el equipo</p>
+            <p className="text-xs sm:text-sm text-medical-100/90 font-medium">Comparte información y comunícate con el equipo</p>
           </div>
         </div>
 
         {/* Messages List */}
-        <div className="max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 custom-scrollbar bg-gradient-to-b from-slate-50/50 to-transparent dark:from-slate-900/30 dark:to-transparent">
+        <div className="max-h-[400px] sm:max-h-[500px] md:max-h-[600px] overflow-y-auto p-3 sm:p-4 md:p-6 space-y-3 sm:space-y-4 custom-scrollbar bg-gradient-to-b from-white/50 to-transparent dark:from-slate-900/30 dark:to-transparent">
           {posts.length === 0 ? (
             <div className="text-center py-12 sm:py-16">
-              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-indigo-100 dark:bg-indigo-900/30 mb-4">
-                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-500 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-medical-100 dark:bg-medical-900/30 mb-4">
+                <svg className="w-8 h-8 sm:w-10 sm:h-10 text-medical-500 dark:text-medical-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
@@ -146,16 +142,15 @@ export default function Board() {
             </div>
           ) : (
             posts.map(post => (
-              <div key={post.id} className="group bg-white dark:bg-slate-800/60 rounded-xl sm:rounded-2xl border border-slate-200/60 dark:border-white/10 p-3 sm:p-4 md:p-5 shadow-sm hover:shadow-md dark:hover:shadow-lg transition-all duration-300 hover:border-indigo-300/50 dark:hover:border-indigo-500/30 hover:-translate-y-0.5">
+              <div key={post.id} className="group bg-white dark:bg-slate-800/60 rounded-xl sm:rounded-2xl border-2 border-slate-200 dark:border-white/10 p-3 sm:p-4 md:p-5 shadow-md hover:shadow-lg transition-all duration-300 hover:border-medical-400 dark:hover:border-medical-500/30 hover:-translate-y-0.5">
                 {/* Main Post */}
                 <div className="flex items-start justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 sm:gap-3 mb-3">
-                      <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md transition-transform duration-300 group-hover:scale-110 ${
-                        post.user.role === 'ADMIN' 
-                          ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white ring-2 ring-indigo-300/50 dark:ring-indigo-500/30' 
-                          : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
-                      }`}>
+                      <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md transition-transform duration-300 group-hover:scale-110 ${post.user.role === 'ADMIN'
+                        ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white ring-2 ring-medical-300/50 dark:ring-medical-500/30'
+                        : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
+                        }`}>
                         {post.user.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -178,7 +173,9 @@ export default function Board() {
                       </div>
                     </div>
                     <div className="pl-0 sm:pl-12">
-                      <p className="text-sm sm:text-base text-slate-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap break-words">{post.content}</p>
+                      <p className="text-sm sm:text-base text-black dark:text-slate-200 font-medium leading-relaxed break-words whitespace-pre-wrap">
+                        {post.content}
+                      </p>
                     </div>
                   </div>
                   {(post.userId === user?.id || user?.role === 'ADMIN') && (
@@ -196,25 +193,24 @@ export default function Board() {
 
                 {/* Replies */}
                 {post.replies && post.replies.length > 0 && (
-                  <div className="mt-4 sm:mt-5 ml-2 sm:ml-4 pl-3 sm:pl-5 border-l-2 border-indigo-200/60 dark:border-indigo-500/40 space-y-3 sm:space-y-4">
+                  <div className="mt-4 sm:mt-5 ml-2 sm:ml-4 pl-3 sm:pl-5 border-l-2 border-medical-200/60 dark:border-medical-500/40 space-y-3 sm:space-y-4">
                     {post.replies.map(reply => (
                       <div key={reply.id} className="flex items-start justify-between gap-2 sm:gap-3 group/reply">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start gap-2 sm:gap-2.5 mb-2">
-                            <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm transition-transform duration-200 group-hover/reply:scale-105 ${
-                              reply.user.role === 'ADMIN' 
-                                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white ring-1 ring-indigo-300/50 dark:ring-indigo-500/30' 
-                                : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
-                            }`}>
+                            <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm transition-transform duration-200 group-hover/reply:scale-105 ${reply.user.role === 'ADMIN'
+                              ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white ring-1 ring-medical-300/50 dark:ring-medical-500/30'
+                              : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
+                              }`}>
                               {reply.user.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                                <span className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200 truncate">
+                                <span className="font-bold text-xs sm:text-sm text-black dark:text-slate-100 truncate">
                                   {reply.user.name}
                                 </span>
                                 {reply.user.role === 'ADMIN' && (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] sm:text-[9px] font-bold bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded uppercase tracking-wide">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] sm:text-[9px] font-bold bg-gradient-to-r from-medical-500 to-teal-600 text-white rounded uppercase tracking-wide">
                                     Admin
                                   </span>
                                 )}
@@ -227,7 +223,9 @@ export default function Board() {
                               </div>
                             </div>
                           </div>
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words pl-0 sm:pl-9">{reply.content}</p>
+                          <p className="text-xs sm:text-sm text-slate-900 dark:text-slate-300 font-medium leading-relaxed break-words whitespace-pre-wrap pl-0 sm:pl-9">
+                            {reply.content}
+                          </p>
                         </div>
                         {(reply.userId === user?.id || user?.role === 'ADMIN') && (
                           <button
@@ -247,12 +245,12 @@ export default function Board() {
 
                 {/* Reply Input */}
                 {replyingTo === post.id ? (
-                  <div className="mt-4 sm:mt-5 ml-2 sm:ml-4 pl-3 sm:pl-5 border-l-2 border-indigo-300 dark:border-indigo-500/50 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-r-lg p-3 sm:p-4">
+                  <div className="mt-4 sm:mt-5 ml-2 sm:ml-4 pl-3 sm:pl-5 border-l-2 border-medical-300 dark:border-medical-500/50 bg-medical-50/50 dark:bg-medical-900/10 rounded-r-lg p-3 sm:p-4">
                     <textarea
                       value={replyContent}
                       onChange={e => setReplyContent(e.target.value)}
                       placeholder="Escribe tu respuesta..."
-                      className="w-full p-2.5 sm:p-3 text-sm sm:text-base bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none resize-none transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                      className="w-full p-2.5 sm:p-3 text-sm sm:text-base bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-medical-500 focus:border-medical-500 dark:focus:border-medical-400 outline-none resize-none transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       rows={3}
                       onKeyDown={e => {
                         if (e.key === 'Enter' && e.ctrlKey) {
@@ -264,7 +262,7 @@ export default function Board() {
                       <button
                         onClick={() => sendReply(post.id)}
                         disabled={loading || !replyContent.trim()}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                        className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-medical-600 to-teal-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:from-medical-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
                       >
                         {loading ? (
                           <>
@@ -297,7 +295,7 @@ export default function Board() {
                 ) : (
                   <button
                     onClick={() => setReplyingTo(post.id)}
-                    className="mt-3 sm:mt-4 text-xs sm:text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 hover:gap-3 group"
+                    className="mt-3 sm:mt-4 text-xs sm:text-sm text-medical-600 dark:text-medical-400 hover:text-medical-700 dark:hover:text-medical-300 font-semibold flex items-center gap-1.5 sm:gap-2 transition-colors duration-200 hover:gap-3 group"
                   >
                     <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -308,17 +306,15 @@ export default function Board() {
               </div>
             ))
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         {/* New Message Input */}
         <div className="border-t border-slate-200/60 dark:border-white/10 p-3 sm:p-4 md:p-6 bg-gradient-to-b from-white/80 to-slate-50/80 dark:from-slate-900/80 dark:to-slate-800/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-800 ${
-              user?.role === 'ADMIN' 
-                ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white' 
-                : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300'
-            }`}>
+            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-800 ${user?.role === 'ADMIN'
+              ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white'
+              : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300'
+              }`}>
               {user?.name?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
@@ -330,7 +326,7 @@ export default function Board() {
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
             placeholder="Escribe un mensaje para el tablón..."
-            className="w-full p-3 sm:p-4 text-sm sm:text-base bg-white dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:focus:border-indigo-400 outline-none resize-none transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm focus:shadow-md"
+            className="w-full p-3 sm:p-4 text-sm sm:text-base bg-white dark:bg-slate-800/90 border-2 border-slate-200 dark:border-slate-700 rounded-xl sm:rounded-2xl focus:ring-2 focus:ring-medical-500 focus:border-medical-500 dark:focus:border-medical-400 outline-none resize-none transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-sm focus:shadow-md"
             rows={3}
             onKeyDown={e => {
               if (e.key === 'Enter' && e.ctrlKey) {
@@ -348,7 +344,7 @@ export default function Board() {
             <button
               onClick={sendMessage}
               disabled={loading || !newMessage.trim()}
-              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 text-white text-sm sm:text-base font-bold rounded-xl sm:rounded-2xl hover:from-indigo-500 hover:via-indigo-600 hover:to-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-medical-600 via-medical-700 to-teal-600 text-white text-sm sm:text-base font-bold rounded-xl sm:rounded-2xl hover:from-medical-500 hover:via-medical-600 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
             >
               {loading ? (
                 <>

@@ -10,19 +10,11 @@ export default function BottomNav({ theme, toggleTheme }: { theme: 'light' | 'da
     <nav className="fixed bottom-4 left-4 right-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-2xl flex items-center justify-between px-4 py-3 border border-slate-200 dark:border-white/10 max-w-lg mx-auto gap-3 z-50">
       {/* Navegación principal (scrollable si hace falta) */}
       <div className="flex items-center gap-3 overflow-x-auto scrollbar-none flex-1">
-        <Link href="/" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Calendario</Link>
-        <Link href="/mis-guardias" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Mis guardias</Link>
-        <Link href="/vacaciones" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Vacaciones</Link>
-        <Link href="/mensajes" className="relative text-center font-medium text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">
-          Mensajes
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full animate-pulse">
-              {unreadCount}
-            </span>
-          )}
-        </Link>
+        <Link href="/" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Calendario</Link>
+        <Link href="/mis-guardias" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Mis guardias</Link>
+        <Link href="/vacaciones" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Vacaciones</Link>
         {user?.role === 'ADMIN' && (
-          <Link href="/admin" className="text-center font-bold text-indigo-600 dark:text-indigo-400 hover:scale-105 transition-all whitespace-nowrap uppercase text-[9px] tracking-widest bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
+          <Link href="/admin" className="text-center font-bold text-medical-600 dark:text-medical-400 hover:scale-105 transition-all whitespace-nowrap uppercase text-[9px] tracking-widest bg-medical-500/10 px-2 py-1 rounded-md border border-medical-500/20">
             Admin
           </Link>
         )}

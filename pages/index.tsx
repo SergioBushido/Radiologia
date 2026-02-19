@@ -22,11 +22,11 @@ export default function Home() {
           <div className="mb-2">
             <Logo className="w-10 h-10" />
           </div>
-          <p className="text-sm text-slate-400 font-medium leading-relaxed">Calendario y gestión de guardias</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 font-medium leading-relaxed">Calendario y gestión de guardias</p>
         </div>
-        <Link href="/preferences" className="flex flex-col items-center gap-1 p-3 bg-[var(--bg-card)] border border-slate-700 rounded-xl hover:bg-slate-700 transition group">
-          <svg className="w-6 h-6 text-indigo-400 group-hover:scale-110 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
-          <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Puntos</span>
+        <Link href="/preferences" className="flex flex-col items-center gap-1 p-3 bg-white dark:bg-slate-800 border-2 border-medical-200 dark:border-medical-800/60 rounded-2xl hover:bg-medical-50 dark:hover:bg-medical-900/20 shadow-md transition-all group active:scale-95">
+          <svg className="w-6 h-6 text-medical-600 dark:text-medical-400 group-hover:scale-110 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+          <span className="text-[10px] font-extrabold text-medical-700 dark:text-medical-400 uppercase tracking-widest">Puntos</span>
         </Link>
       </div>
       <Calendar />

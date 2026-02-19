@@ -5,5 +5,17 @@ declare global {
   var prisma: PrismaClient | undefined
 }
 
-export const prisma = global.prisma || new PrismaClient()
-if (process.env.NODE_ENV !== 'production') global.prisma = prisma
+export let prisma: PrismaClient
+
+if (typeof window === 'undefined') {
+  if (process.env.NODE_ENV === 'production') {
+    prisma = new PrismaClient()
+  } else {
+    if (!global.prisma || !global.prisma.boardPost) {
+      console.log('Initializing or re-initializing Prisma Client...')
+      global.prisma = new PrismaClient()
+    }
+    prisma = global.prisma
+    console.log('Prisma models available in app:', Object.keys(prisma).filter(k => !k.startsWith('_')));
+  }
+}

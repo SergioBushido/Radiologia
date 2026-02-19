@@ -30,8 +30,8 @@ export default function PointsModal({ date, existingPreference, onClose, onSave,
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-700">
-                <div className="p-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white flex justify-between items-center">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh]">
+                <div className="p-4 bg-gradient-to-r from-medical-600 to-medical-500 text-white flex justify-between items-center">
                     <h3 className="font-bold text-lg capitalize">{format(parseISO(date), 'EEEE d MMMM', { locale: es })}</h3>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
                 </div>
@@ -59,7 +59,7 @@ export default function PointsModal({ date, existingPreference, onClose, onSave,
                     <div className="space-y-3">
                         <div className="flex justify-between items-center">
                             <label className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Puntos a Asignar</label>
-                            <span className="text-xs font-bold text-indigo-400">Disp: {maxAllocatable}</span>
+                            <span className="text-xs font-bold text-medical-400">Disp: {maxAllocatable}</span>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ export default function PointsModal({ date, existingPreference, onClose, onSave,
                                 max={Math.min(20, Math.max(1, maxAllocatable))} // Allow at least 1 even if 0 remaining? No.
                                 value={points}
                                 onChange={e => setPoints(Number(e.target.value))}
-                                className="w-full accent-indigo-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
+                                className="w-full accent-medical-500 h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
                             />
                             <span className="text-2xl font-bold text-slate-700 dark:text-white w-8 text-center">{points}</span>
                         </div>
@@ -82,7 +82,7 @@ export default function PointsModal({ date, existingPreference, onClose, onSave,
                     </div>
 
                     <div className="pt-2 flex flex-col gap-2">
-                        <button onClick={handleSave} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 transition-all active:scale-95">
+                        <button onClick={handleSave} className="w-full py-3 bg-medical-600 hover:bg-medical-500 text-white font-bold rounded-xl shadow-lg shadow-medical-600/30 transition-all active:scale-95">
                             Guardar Preferencia
                         </button>
                         {existingPreference && (

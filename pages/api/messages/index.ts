@@ -51,7 +51,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                     select: { id: true, name: true, role: true }
                 })
 
-                return res.json({ conversations: users })
+                // Get unread counts for each contact
+                const usersWithUnread = await Promise.all(users.map(async (u) => {
+                    const unreadCount = await prisma.message.count({
+                        where: {
+                            senderId: u.id,
+                            receiverId: user.id,
+                            isRead: false
+                        }
+                    })
+                    return { ...u, unreadCount }
+                }))
+
+                return res.json({ conversations: usersWithUnread })
             } else {
                 // Fetch conversation with specific user
                 whereClause = {

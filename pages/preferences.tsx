@@ -104,33 +104,33 @@ export default function PreferencesPage() {
     return (
         <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] pb-20">
             {/* Header Sticky */}
-            <div className="sticky top-0 z-20 bg-[var(--bg-card)]/90 backdrop-blur-md border-b border-white/5 shadow-lg p-4">
+            <div className="sticky top-0 z-20 bg-gradient-to-r from-medical-600 to-medical-800 p-4 text-white shadow-lg">
                 <div className="max-w-md mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="p-2 bg-slate-800 rounded-full hover:bg-slate-700 transition">
-                            <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                        <Link href="/" className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                         </Link>
                         <h1 className="font-bold text-lg">Mis Preferencias</h1>
                     </div>
 
                     <div className="flex flex-col items-end">
-                        <span className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Puntos Restantes</span>
-                        <span className={`text-2xl font-bold ${pointsRemaining < 5 ? 'text-red-500' : 'text-emerald-400'}`}>{pointsRemaining}</span>
+                        <span className="text-[10px] uppercase tracking-widest text-medical-100 font-extrabold">Puntos Restantes</span>
+                        <span className={`text-2xl font-black ${pointsRemaining < 5 ? 'text-red-300' : 'text-emerald-300'}`}>{pointsRemaining}</span>
                     </div>
                 </div>
             </div>
 
             {/* Month Nav */}
             <div className="flex items-center justify-center gap-4 py-6">
-                <button onClick={handlePrev} className="p-2 hover:bg-white/10 rounded-full text-slate-400"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
-                <h2 className="text-xl font-bold capitalize text-white w-40 text-center">{format(start, 'MMMM yyyy', { locale: es })}</h2>
-                <button onClick={handleNext} className="p-2 hover:bg-white/10 rounded-full text-slate-400"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
+                <button onClick={handlePrev} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full text-slate-600 dark:text-slate-400"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg></button>
+                <h2 className="text-xl font-extrabold capitalize text-slate-900 dark:text-white w-48 text-center">{format(start, 'MMMM yyyy', { locale: es })}</h2>
+                <button onClick={handleNext} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full text-slate-600 dark:text-slate-400"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
             </div>
 
             {/* Calendar Grid */}
             <div className="px-4 max-w-lg mx-auto">
                 <div className="grid grid-cols-7 gap-2 mb-2">
-                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-slate-500 font-bold text-xs">{d}</div>)}
+                    {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map(d => <div key={d} className="text-center text-slate-600 dark:text-slate-500 font-extrabold text-xs">{d}</div>)}
                 </div>
                 <div className="grid grid-cols-7 gap-2">
                     {Array.from({ length: leadingBlanks }).map((_, i) => <div key={`b-${i}`} />)}
@@ -140,10 +140,10 @@ export default function PreferencesPage() {
                         const pref = preferences.find(p => p.date === dateStr)
 
                         // Styles
-                        let bgClass = "bg-white/5 border-white/10 hover:bg-white/10"
+                        let bgClass = "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm"
                         if (pref) {
-                            if (pref.type === 'PREFERENCE') bgClass = "bg-emerald-500/20 border-emerald-500/50 hover:bg-emerald-500/30 ring-1 ring-emerald-500/30"
-                            if (pref.type === 'BLOCK') bgClass = "bg-red-500/20 border-red-500/50 hover:bg-red-500/30 ring-1 ring-red-500/30"
+                            if (pref.type === 'PREFERENCE') bgClass = "bg-emerald-600 dark:bg-emerald-500/20 border-emerald-700 dark:border-emerald-500/50 hover:bg-emerald-500/30 ring-2 ring-emerald-500/30 shadow-lg"
+                            if (pref.type === 'BLOCK') bgClass = "bg-red-600 dark:bg-red-500/20 border-red-700 dark:border-red-500/50 hover:bg-red-500/30 ring-2 ring-red-500/30 shadow-lg"
                         }
 
                         return (
@@ -151,14 +151,14 @@ export default function PreferencesPage() {
                                 key={d}
                                 onClick={() => setSelectedDate(dateStr)}
                                 className={`
-                           aspect-square rounded-xl border flex flex-col items-center justify-center relative transition-all active:scale-95
+                           aspect-square rounded-2xl border flex flex-col items-center justify-center relative transition-all active:scale-95
                            ${bgClass}
                         `}
                             >
-                                <span className="text-sm font-bold text-slate-300">{d}</span>
+                                <span className={`text-sm font-extrabold ${pref ? 'text-white' : 'text-slate-900 dark:text-slate-300'}`}>{d}</span>
                                 {pref && (
-                                    <div className={`absolute bottom-1 text-[10px] font-bold px-1.5 rounded-full ${pref.type === 'PREFERENCE' ? 'bg-emerald-500 text-black' : 'bg-red-500 text-white'}`}>
-                                        {pref.points}
+                                    <div className={`absolute bottom-1 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-white shadow-sm ${pref.type === 'PREFERENCE' ? 'text-emerald-700' : 'text-red-700'}`}>
+                                        {pref.points}pts
                                     </div>
                                 )}
                             </button>

@@ -3,29 +3,35 @@
 @tailwind utilities;
 
 :root {
-  /* Light Theme (Default) */
-  --bg-main: #f8fafc;
+  /* Medical Healthcare Theme (High Contrast Day) */
+  --bg-main: #e2e8f0;
+  /* Slate 200 - Darker for distinct surfaces */
   --bg-surface: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --border-card: rgba(0, 0, 0, 0.05);
-  --accent-primary: #4f46e5;
-  --accent-secondary: #7c3aed;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --bg-card: #ffffff;
+  --border-card: #cbd5e1;
+  /* Slate 300 - Harder borders */
+  --accent-primary: #0284c7;
+  --accent-secondary: #0d9488;
+  --text-main: #000000;
+  /* Pure black for primary text */
+  --text-muted: #1e293b;
+  /* Dark Slate for secondary text */
+  --glass-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
 }
 
 .dark {
-  /* Dark Theme */
-  --bg-main: #0a0e14;
-  --bg-surface: #111827;
-  --bg-card: rgba(17, 24, 39, 0.7);
-  --border-card: rgba(255, 255, 255, 0.1);
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
+  /* Medical Healthcare Theme (Night) */
+  --bg-main: #0f172a;
+  --bg-surface: #1e293b;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --border-card: rgba(56, 189, 248, 0.1);
+  --accent-primary: #38bdf8;
+  /* Sky 400 */
+  --accent-secondary: #2dd4bf;
+  /* Teal 400 */
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
 }
 
 html,

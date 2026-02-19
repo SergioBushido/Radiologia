@@ -44,7 +44,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
     async function toggleVacation(userId: number) {
         const token = localStorage.getItem('token')
         const existing = vacations.find(v => v.userId === userId)
-        
+
         if (existing) {
             // Delete vacation
             const res = await fetch(`/api/vacations?date=${date}&userId=${userId}`, {
@@ -77,10 +77,10 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all" onClick={onClose}>
             <div className={`bg-[var(--bg-surface)] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-900 p-6 text-white text-center relative overflow-hidden flex-none">
+                <div className="bg-gradient-to-br from-medical-600 to-medical-800 p-6 text-white text-center relative overflow-hidden flex-none">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     <h2 className="text-3xl font-extrabold mb-1 drop-shadow-lg">{format(d, 'dd')}</h2>
-                    <p className="text-indigo-200 uppercase tracking-[0.2em] text-[10px] font-bold">{format(d, 'MMMM yyyy', { locale: es })}</p>
+                    <p className="text-medical-100 uppercase tracking-[0.2em] text-[10px] font-bold">{format(d, 'MMMM yyyy', { locale: es })}</p>
                     <p className="text-white/60 text-xs mt-1 font-medium">{format(d, 'EEEE', { locale: es })}</p>
                 </div>
 
@@ -90,11 +90,11 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                         {shift ? (
                             <div className="space-y-2">
                                 <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/[0.03] rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
-                                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-500/10 dark:border-indigo-500/20">1</div>
+                                    <div className="w-8 h-8 rounded-full bg-medical-500/10 dark:bg-medical-500/20 text-medical-600 dark:text-medical-400 flex items-center justify-center font-bold text-xs border border-medical-500/10 dark:border-medical-500/20">1</div>
                                     <span className="font-semibold text-sm text-[var(--text-main)]">{usersMap[shift.slot1UserId] || 'Usuario ' + shift.slot1UserId}</span>
                                 </div>
                                 <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-white/[0.03] rounded-2xl border border-slate-100 dark:border-white/5 shadow-inner">
-                                    <div className="w-8 h-8 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs border border-indigo-500/10 dark:border-indigo-500/20">2</div>
+                                    <div className="w-8 h-8 rounded-full bg-medical-500/10 dark:bg-medical-500/20 text-medical-600 dark:text-medical-400 flex items-center justify-center font-bold text-xs border border-medical-500/10 dark:border-medical-500/20">2</div>
                                     <span className="font-semibold text-sm text-[var(--text-main)]">{usersMap[shift.slot2UserId] || 'Usuario ' + shift.slot2UserId}</span>
                                 </div>
                             </div>
@@ -171,11 +171,10 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                                         <button
                                             key={userId}
                                             onClick={() => toggleVacation(Number(userId))}
-                                            className={`p-2 rounded-lg text-xs font-medium transition-all ${
-                                                hasVacation
+                                            className={`p-2 rounded-lg text-xs font-medium transition-all ${hasVacation
                                                     ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-500/30'
                                                     : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 hover:bg-green-50 dark:hover:bg-green-500/10'
-                                            }`}
+                                                }`}
                                         >
                                             {hasVacation ? '✓ ' : ''}{name}
                                         </button>
@@ -189,7 +188,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                         {userRole === 'ADMIN' && (
                             <button
                                 onClick={() => { onEdit(); onClose() }}
-                                className="flex items-center justify-center gap-2 p-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all active:scale-95 text-sm"
+                                className="flex items-center justify-center gap-2 p-3 bg-medical-600 text-white rounded-xl font-bold hover:bg-medical-500 shadow-lg shadow-medical-600/20 transition-all active:scale-95 text-sm"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                 Editar

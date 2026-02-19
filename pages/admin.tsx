@@ -64,7 +64,7 @@ export default function Admin() {
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Logo className="w-10 h-10" />
-          <h1 className="text-xl font-semibold text-slate-400">Panel de Administración</h1>
+          <h1 className="text-xl font-black text-medical-600 dark:text-medical-400">Admin Panel (v2)</h1>
         </div>
         <input
           type="month"
@@ -115,24 +115,59 @@ export default function Admin() {
         </div>
       )}
 
-      <div className="mt-6 space-y-2">
-        <h2 className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-[0.2em] ml-2 mb-2">Personal de Plantilla ({users.length})</h2>
-        {users.map(u => (
-          <div key={u.id} className="mobile-card !p-3 flex justify-between items-center group">
-            <div className="flex flex-col">
-              <div className="font-bold text-sm">{u.name}</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-500 font-mono">{u.email} • {u.group || '—'} • {u.role}</div>
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4 px-2">
+          <h2 className="text-xs font-black text-slate-500 uppercase tracking-[0.2em]">Plantilla del Centro ({users.length})</h2>
+          <div className="h-px flex-1 bg-slate-200 dark:bg-white/10 ml-4 hidden sm:block opacity-50"></div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-6xl mx-auto">
+          {users.map(u => (
+            <div key={u.id} className="mobile-card !p-4 flex items-center gap-4 group transition-all duration-300 hover:border-medical-500/50 dark:hover:border-medical-400/30">
+              {/* Avatar/Initial */}
+              <div className="w-10 h-10 rounded-full bg-medical-50 dark:bg-medical-500/10 text-medical-600 dark:text-medical-400 flex items-center justify-center font-bold text-sm shrink-0 border border-medical-200 dark:border-medical-500/20 group-hover:scale-110 transition-transform">
+                {u.name.charAt(0).toUpperCase()}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100 truncate hover:text-medical-600 transition-colors uppercase tracking-tight">{u.name}</span>
+                  <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${u.role === 'ADMIN' ? 'bg-indigo-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                    }`}>
+                    {u.role}
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span className="text-[10px] text-slate-500 font-medium truncate opacity-70 flex items-center gap-1 shrink-0">
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+                    {u.email}
+                  </span>
+                  <span className="text-[10px] text-medical-600 dark:text-medical-400 font-bold flex items-center gap-1 shrink-0">
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1" /></svg>
+                    {u.group || 'General'}
+                  </span>
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1 shrink-0">
+                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {u.monthlyLimit || 22} g/m
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0 ml-2">
+                <Link href={`/admin/user/${u.id}`} className="p-2 bg-medical-50 dark:bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded-lg transition-all hover:bg-medical-600 hover:text-white dark:hover:bg-medical-500 active:scale-90 border border-medical-200 dark:border-medical-500/30" title="Editar">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                </Link>
+                <button
+                  onClick={() => remove(u.id)}
+                  className="p-2 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all active:scale-90 border border-red-200 dark:border-red-500/30"
+                  title="Eliminar"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </button>
+              </div>
             </div>
-            <div className="flex gap-1.5">
-              <Link href={`/admin/user/${u.id}`} className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors shadow-sm shadow-indigo-500/20">
-                Editar
-              </Link>
-              <button onClick={() => remove(u.id)} className="px-2 py-1.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white text-xs font-bold rounded-lg transition-all border border-red-500/20">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
     </div>

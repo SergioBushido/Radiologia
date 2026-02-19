@@ -31,7 +31,6 @@ export default function MessagesPage() {
     const [newMessage, setNewMessage] = useState('')
     const [targetUser, setTargetUser] = useState<User | null>(null)
     const [conversations, setConversations] = useState<User[]>([])
-    const messagesEndRef = useRef<HTMLDivElement>(null)
     const router = useRouter()
 
     // Poll for messages
@@ -72,9 +71,6 @@ export default function MessagesPage() {
     }, [currentUser, targetUser])
 
     // Scroll
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
 
     const sendMessage = async () => {
         if (!newMessage.trim()) return
@@ -98,13 +94,13 @@ export default function MessagesPage() {
         <div className="min-h-screen bg-[var(--bg-main)] pb-20 pt-4">
             <div className="max-w-md mx-auto h-[80vh] flex flex-col bg-[var(--bg-card)] rounded-2xl shadow-xl overflow-hidden border border-slate-200 dark:border-white/10 m-4">
                 {/* Header */}
-                <div className="bg-indigo-600 p-4 text-white flex items-center justify-between shrink-0">
+                <div className="bg-gradient-to-r from-medical-600 to-medical-800 p-4 text-white flex items-center justify-between shrink-0">
                     <div>
                         <h1 className="text-xl font-bold">Mensajes</h1>
-                        {targetUser && <p className="text-xs text-indigo-200">Chat con {targetUser.name}</p>}
+                        {targetUser && <p className="text-xs text-medical-100">Chat con {targetUser.name}</p>}
                     </div>
                     {targetUser && currentUser.role === 'ADMIN' && (
-                        <button onClick={() => setTargetUser(null)} className="text-sm bg-white/20 px-3 py-1 rounded hover:bg-white/30">Volver</button>
+                        <button onClick={() => setTargetUser(null)} className="text-sm bg-white/20 px-3 py-1 rounded-lg hover:bg-white/30 font-bold transition-colors">Volver</button>
                     )}
                 </div>
 
@@ -130,32 +126,31 @@ export default function MessagesPage() {
                             {messages.length === 0 && <div className="text-center p-8 text-slate-400">No hay mensajes.</div>}
                             {messages.map(m => (
                                 <div key={m.id} className={`flex ${m.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[80%] rounded-2xl px-4 py-3 ${m.senderId === currentUser.id
-                                        ? 'bg-indigo-600 text-white rounded-br-none'
-                                        : 'bg-white dark:bg-white/10 border border-slate-200 dark:border-white/5 rounded-bl-none'}`}>
-                                        <p>{m.content}</p>
-                                        <div className={`text-[10px] text-right mt-1 ${m.senderId === currentUser.id ? 'text-indigo-200' : 'text-slate-400'}`}>
+                                    <div className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${m.senderId === currentUser.id
+                                        ? 'bg-medical-600 text-white rounded-br-none'
+                                        : 'bg-white dark:bg-white/10 border-2 border-slate-200 dark:border-white/10 rounded-bl-none text-slate-900 dark:text-white'}`}>
+                                        <p className="text-sm sm:text-base font-medium">{m.content}</p>
+                                        <div className={`text-[10px] text-right mt-1 font-bold ${m.senderId === currentUser.id ? 'text-medical-100' : 'text-slate-500'}`}>
                                             {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                            <div ref={messagesEndRef} />
                         </div>
                     )}
                 </div>
 
                 {/* Footer Input */}
                 {(currentUser.role !== 'ADMIN' || targetUser) && (
-                    <div className="p-4 bg-[var(--bg-surface)] border-t border-slate-200 dark:border-white/10 flex gap-2 shrink-0">
+                    <div className="p-4 bg-white dark:bg-slate-900 border-t-2 border-slate-200 dark:border-white/10 flex gap-2 shrink-0">
                         <input
-                            className="flex-1 bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                            className="flex-1 bg-slate-100 dark:bg-white/5 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-medical-500 text-slate-900 dark:text-white font-medium"
                             placeholder="Escribe un mensaje..."
                             value={newMessage}
                             onChange={e => setNewMessage(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && sendMessage()}
                         />
-                        <button onClick={sendMessage} disabled={!newMessage.trim()} className="bg-indigo-600 text-white p-3 rounded-xl disabled:opacity-50">
+                        <button onClick={sendMessage} disabled={!newMessage.trim()} className="bg-medical-600 text-white p-3 rounded-xl disabled:opacity-50 hover:bg-medical-500 transition-colors shadow-lg active:scale-95">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                         </button>
                     </div>

@@ -86,13 +86,13 @@ export default function Calendar() {
       {/* Header Compacto */}
       <div className="flex-none p-4 pb-2">
         <div className="flex items-center justify-between bg-[var(--bg-card)] backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-white/5 max-w-lg mx-auto w-full">
-          <button onClick={handlePrev} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+          <button onClick={handlePrev} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-medical-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
           <div className="text-lg font-bold text-[var(--text-main)] capitalize tracking-tight">
             {format(start, 'MMMM yyyy', { locale: es })}
           </div>
-          <button onClick={handleNext} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400">
+          <button onClick={handleNext} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-medical-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
@@ -103,7 +103,7 @@ export default function Calendar() {
         {/* Weekday Headers */}
         <div className="grid grid-cols-7 gap-1 flex-none">
           {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => (
-            <div key={d} className="text-center font-bold text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest py-1">{d}</div>
+            <div key={d} className="text-center font-extrabold text-[10px] text-slate-600 dark:text-slate-400 uppercase tracking-widest py-2">{d}</div>
           ))}
         </div>
 
@@ -129,24 +129,27 @@ export default function Calendar() {
                 onClick={() => handleDayClick(date)}
                 className={`
                   group relative flex flex-col items-center justify-start p-1 cursor-pointer
-                  bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none hover:bg-slate-50 dark:hover:bg-white/[0.08] backdrop-blur-sm rounded-xl border 
-                  ${isToday ? 'border-indigo-500/50 ring-1 ring-indigo-500/20 bg-indigo-50/50 dark:bg-indigo-500/10' : 'border-slate-100 dark:border-white/5'} 
+                  bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none hover:bg-slate-50 dark:hover:bg-white/[0.08] backdrop-blur-sm rounded-xl border-2
+                  ${isToday ? 'border-medical-500 ring-1 ring-medical-500/20 bg-medical-50/50 dark:bg-medical-500/10' : 'border-slate-200 dark:border-white/10'} 
                   hover:shadow-lg dark:hover:shadow-black/20 hover:scale-[1.02] hover:z-10 transition-all duration-200 ease-out
                 `}
               >
                 <div className={`
-                  text-sm font-bold mb-0.5
-                  ${isToday ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-700 dark:text-slate-300'}
+                  text-sm font-extrabold mb-1
+                  ${isToday ? 'text-medical-700 dark:text-medical-400' : 'text-slate-900 dark:text-slate-200'}
                 `}>
                   {format(d, 'dd')}
                 </div>
+                {isToday && (
+                  <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-medical-500 rounded-full"></div>
+                )}
 
                 {/* Mobile: Dots Indicator */}
                 <div className="md:hidden w-full flex justify-center pb-1 mt-auto">
                   {s ? (
                     <div className="flex gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-medical-500 shadow-[0_0_8px_rgba(2,132,199,0.6)]"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-medical-500 shadow-[0_0_8px_rgba(2,132,199,0.6)]"></div>
                     </div>
                   ) : (
                     (() => {
@@ -180,18 +183,18 @@ export default function Calendar() {
                 </div>
 
                 {/* Desktop: Names (Truncated) */}
-                <div className="hidden md:flex flex-col gap-0.5 w-full mt-auto">
+                <div className="hidden md:flex flex-col gap-1 w-full mt-auto mb-1">
                   {s ? (
                     <>
-                      <div className="text-[10px] text-indigo-700 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-500/10 px-1 rounded truncate leading-tight border border-indigo-100 dark:border-indigo-500/20">
+                      <div className="text-[10px] font-bold text-medical-800 dark:text-medical-100 bg-white dark:bg-medical-500/20 px-1.5 py-1 rounded-lg truncate leading-tight border-2 border-medical-500 dark:border-medical-500/30 shadow-md">
                         {slot1Name}
                       </div>
-                      <div className="text-[10px] text-indigo-700 dark:text-indigo-200 bg-indigo-50 dark:bg-indigo-500/10 px-1 rounded truncate leading-tight border border-indigo-100 dark:border-indigo-500/20">
+                      <div className="text-[10px] font-bold text-medical-800 dark:text-medical-100 bg-white dark:bg-medical-500/20 px-1.5 py-1 rounded-lg truncate leading-tight border-2 border-medical-500 dark:border-medical-500/30 shadow-md">
                         {slot2Name}
                       </div>
                     </>
                   ) : (
-                    <div className="text-[10px] text-slate-400 dark:text-slate-600 text-center italic py-1">Libre</div>
+                    <div className="text-[10px] text-slate-800 dark:text-slate-500 text-center italic py-2 font-bold opacity-80">Libre</div>
                   )}
 
                   {/* Show MY preference and vacations if no shift */}
@@ -204,28 +207,28 @@ export default function Calendar() {
                     return (
                       <div className="flex flex-col gap-0.5">
                         {myVacation && (
-                          <div className="text-[10px] font-bold px-1 rounded border mb-0.5 bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30">
-                            VAC
+                          <div className="text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30 shadow-sm">
+                            VACACIONES
                           </div>
                         )}
                         {myPref && (
-                          <div className={`text-[10px] font-bold px-1 rounded border mb-0.5 ${myPref.type === 'LOCK'
-                            ? 'bg-slate-800 text-white border-slate-600'
+                          <div className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 ${myPref.type === 'LOCK'
+                            ? 'bg-slate-900 text-white border-black'
                             : myPref.type === 'BLOCK'
-                              ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
-                              : 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                            }`}>
-                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'Puntos' : 'Solicitado'} {myPref.type !== 'LOCK' && `${myPref.points}pts`}
+                              ? 'bg-red-600 text-white border-red-700 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
+                              : 'bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
+                            } shadow-sm`}>
+                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'EVITAR' : 'SOLICITAR'} {myPref.type !== 'LOCK' && `(${myPref.points}pts)`}
                           </div>
                         )}
                         {user?.role === 'ADMIN' && otherVacations.length > 0 && (
-                          <div className="text-[10px] font-bold px-1 rounded border bg-green-50 text-green-600 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20">
-                            {otherVacations.length} VAC
+                          <div className="text-[9px] font-bold px-1.5 py-0.5 rounded border-2 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 border-green-300 dark:border-green-500/20 shadow-sm">
+                            {otherVacations.length} PERSONAL VAC
                           </div>
                         )}
                         {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
-                          <div className="text-[10px] font-bold px-1 rounded border bg-orange-50 text-orange-600 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20">
-                            {otherPrefs.length} solicitudes
+                          <div className="text-[9px] font-bold px-1.5 py-0.5 rounded border-2 bg-orange-100 dark:bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-300 dark:border-orange-500/20 shadow-sm mt-1">
+                            {otherPrefs.length} SOLICITUDES
                           </div>
                         )}
                       </div>
