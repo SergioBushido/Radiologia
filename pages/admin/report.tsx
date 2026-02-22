@@ -65,11 +65,12 @@ export default function ReportPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] p-6 pb-20 print:p-4 print:bg-white print:text-black">
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media print {
           .no-print { display: none !important; }
-          .print-full-list .screen-only { display: none !important; }
-          .print-full-list .print-rows { display: block !important; }
+          .screen-only { display: none !important; }
+          .print-rows { display: block !important; }
           .mobile-card {
             box-shadow: none !important;
             border: 1px solid #ddd !important;
@@ -82,7 +83,7 @@ export default function ReportPage() {
           @page { margin: 1.5cm; }
         }
         .print-rows { display: none; }
-      `}</style>
+      `}} />
 
       {/* Header */}
       <div className="flex justify-between items-center mb-6 no-print">
