@@ -12,23 +12,40 @@ export default function MisGuardias() {
   const [shifts, setShifts] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [isFetching, setIsFetching] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) router.push('/login')
     if (user) fetchShifts(user, selectedDate)
   }, [loading, user, selectedDate])
 
-  async function fetchShifts(user: any, date: Date) {
+  async function fetchShifts(currentUser: any, date: Date) {
     const monthStr = format(date, 'yyyy-MM')
+    const token = localStorage.getItem('token')
+    const headers: any = { 'Content-Type': 'application/json' }
+    if (token) headers['Authorization'] = `Bearer ${token}`
+
+    setIsFetching(true)
     try {
-      const res = await fetch(`/api/shifts?month=${monthStr}`)
+      const res = await fetch(`/api/shifts?month=${monthStr}`, { headers })
+      if (!res.ok) throw new Error('Failed to fetch shifts')
       const data = await res.json()
-      const my = (data.shifts || []).filter((s: any) => s.slot1UserId === user.id || s.slot2UserId === user.id)
+
+      // Use loose equality (==) or cast to Number to be safe against number-string mismatch
+      const my = (data.shifts || []).filter((s: any) =>
+        Number(s.slot1UserId) === Number(currentUser.id) ||
+        Number(s.slot2UserId) === Number(currentUser.id)
+      )
       setShifts(my)
-      const statRes = await fetch(`/api/users/${user.id}/stats?month=${monthStr}`)
-      setStats(await statRes.json())
+
+      const statRes = await fetch(`/api/users/${currentUser.id}/stats?month=${monthStr}`, { headers })
+      if (statRes.ok) {
+        setStats(await statRes.json())
+      }
     } catch (e) {
       console.error('Error fetching shifts:', e)
+    } finally {
+      setIsFetching(false)
     }
   }
 
