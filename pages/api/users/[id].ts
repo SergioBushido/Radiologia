@@ -14,11 +14,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.json(user)
   }
   if (req.method === 'PUT') {
-    if (!requester || !requireAdmin(requester)) return res.status(403).json({ error: 'Admin required' })
+    if (!requester) return res.status(401).json({ error: 'Unauthorized' })
+
+    const isAdmin = requireAdmin(requester)
+    const isSelf = requester.id === userId
+
+    if (!isAdmin && !isSelf) {
+      return res.status(403).json({ error: 'You can only update your own profile' })
+    }
+
     const { name, email, password, role, group, monthlyLimit } = req.body
-    const data: any = { name, email, role, group: group || null, monthlyLimit }
-    if (password) data.passwordHash = await bcrypt.hash(password, 10)
-    const user = await prisma.user.update({ where: { id: userId }, data })
+
+    // Prepare data
+    const data: any = { name, email }
+
+    // Non-admins cannot change their own role, group or limit
+    if (isAdmin) {
+      if (role) data.role = role
+      if (group !== undefined) data.group = group || null
+      if (monthlyLimit !== undefined) data.monthlyLimit = monthlyLimit
+    }
+
+    if (password) {
+      data.passwordHash = await bcrypt.hash(password, 10)
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data
+    })
     return res.json(user)
   }
   if (req.method === 'DELETE') {

@@ -13,6 +13,7 @@ export default function BottomNav({ theme, toggleTheme }: { theme: 'light' | 'da
         <Link href="/" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Calendario</Link>
         <Link href="/mis-guardias" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Mis guardias</Link>
         <Link href="/vacaciones" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Vacaciones</Link>
+        <Link href="/perfil" className="text-center font-medium text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-white transition-colors whitespace-nowrap text-xs">Perfil</Link>
         {user?.role === 'ADMIN' && (
           <Link href="/admin" className="text-center font-bold text-medical-600 dark:text-medical-400 hover:scale-105 transition-all whitespace-nowrap uppercase text-[9px] tracking-widest bg-medical-500/10 px-2 py-1 rounded-md border border-medical-500/20">
             Admin
