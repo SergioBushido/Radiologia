@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { parseISO, format } from 'date-fns'
+import { parseISO, format, addMonths, subMonths } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useAuth } from '../lib/useAuth'
 import { useRouter } from 'next/router'
@@ -11,28 +11,62 @@ export default function MisGuardias() {
   const router = useRouter()
   const [shifts, setShifts] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
-  useEffect(() => { if (!loading && !user) router.push('/login'); if (user) fetchShifts(user) }, [loading, user])
+  useEffect(() => {
+    if (!loading && !user) router.push('/login')
+    if (user) fetchShifts(user, selectedDate)
+  }, [loading, user, selectedDate])
 
-  async function fetchShifts(user: any) {
-    const month = new Date().toISOString().slice(0, 7)
-    const res = await fetch(`/api/shifts?month=${month}`)
-    const data = await res.json()
-    const my = (data.shifts || []).filter((s: any) => s.slot1UserId === user.id || s.slot2UserId === user.id)
-    setShifts(my)
-    const statRes = await fetch(`/api/users/${user.id}/stats?month=${month}`)
-    setStats(await statRes.json())
+  async function fetchShifts(user: any, date: Date) {
+    const monthStr = format(date, 'yyyy-MM')
+    try {
+      const res = await fetch(`/api/shifts?month=${monthStr}`)
+      const data = await res.json()
+      const my = (data.shifts || []).filter((s: any) => s.slot1UserId === user.id || s.slot2UserId === user.id)
+      setShifts(my)
+      const statRes = await fetch(`/api/users/${user.id}/stats?month=${monthStr}`)
+      setStats(await statRes.json())
+    } catch (e) {
+      console.error('Error fetching shifts:', e)
+    }
   }
+
+  const nextMonth = () => setSelectedDate(prev => addMonths(prev, 1))
+  const prevMonth = () => setSelectedDate(prev => subMonths(prev, 1))
+  const isCurrentMonth = format(selectedDate, 'yyyy-MM') === format(new Date(), 'yyyy-MM')
 
   if (loading) return <div className="p-4 bg-[var(--bg-main)] text-white h-screen">Cargando...</div>
   if (!user) return null
 
   return (
     <div className="p-6 min-h-screen pb-28 bg-[var(--bg-main)]">
-      <div className="mb-6">
+      <div className="flex justify-between items-center mb-6">
         <Logo className="w-10 h-10" />
+        <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-1 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+          <button onClick={prevMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+          </button>
+          <div className="text-sm font-bold uppercase tracking-widest min-w-[120px] text-center capitalize">
+            {format(selectedDate, 'MMMM yyyy', { locale: es })}
+          </div>
+          <button onClick={nextMonth} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+          </button>
+        </div>
       </div>
-      <h1 className="text-xl font-semibold text-slate-400 mb-6">Mis guardias</h1>
+
+      <h1 className="text-xl font-semibold text-slate-400 mb-6 flex items-center gap-2">
+        Mis guardias
+        {!isCurrentMonth && (
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="text-[10px] bg-medical-500/10 text-medical-600 dark:text-medical-400 px-2 py-1 rounded-lg border border-medical-500/20 uppercase tracking-widest font-black"
+          >
+            Hoy
+          </button>
+        )}
+      </h1>
 
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div className="p-4 bg-[var(--bg-surface)] dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 flex flex-col shadow-sm">
@@ -45,25 +79,37 @@ export default function MisGuardias() {
         </div>
         <div className="p-3 bg-[var(--bg-surface)] dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 text-sm text-[var(--text-main)] shadow-sm">Jueves: <b className="font-bold">{stats?.thursday ?? 0}</b></div>
         <div className="p-3 bg-[var(--bg-surface)] dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 text-sm text-[var(--text-main)] shadow-sm">Viernes: <b className="font-bold">{stats?.friday ?? 0}</b></div>
-        <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-200 dark:border-indigo-500/20 col-span-2 text-sm flex justify-between items-center text-indigo-700 dark:text-indigo-300">
+        <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-200 dark:border-indigo-500/20 col-span-2 text-sm flex justify-between items-center text-indigo-700 dark:text-indigo-300 shadow-sm">
           <span>Fines de semana:</span>
           <b className="text-xl font-bold">{stats?.weekend ?? 0}</b>
         </div>
       </div>
 
-      <h2 className="mt-8 font-medium text-[var(--text-muted)] text-sm uppercase tracking-widest">Lista de guardias</h2>
-      <div className="mt-4 space-y-3">
-        {shifts.map(s => (
-          <div key={s.date} className="mobile-card !p-3 flex justify-between items-center border-slate-200 dark:border-white/10 bg-white dark:bg-white/5">
-            <div className="flex flex-col">
-              <div className="font-bold text-[var(--text-main)] capitalize text-sm">{format(parseISO(s.date), 'EEEE', { locale: es })}</div>
-              <div className="text-[10px] text-[var(--text-muted)]">{format(parseISO(s.date), 'dd MMM yyyy')}</div>
-            </div>
-            <div className="text-[10px] font-bold font-mono bg-slate-100 dark:bg-white/5 px-2 py-1 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/5">
-              SLOT {s.slot1UserId === user.id ? '1' : '2'}
-            </div>
+      <div className="flex items-center justify-between mt-8 mb-4">
+        <h2 className="font-medium text-[var(--text-muted)] text-sm uppercase tracking-widest">Lista de guardias</h2>
+        <span className="text-[10px] font-black bg-slate-100 dark:bg-white/5 text-slate-500 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 uppercase tracking-tighter">
+          {shifts.length} asignadas
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        {shifts.length === 0 ? (
+          <div className="p-10 text-center mobile-card border-dashed border-2 border-slate-200 dark:border-white/5 text-slate-400 italic text-sm">
+            Sin guardias para este mes
           </div>
-        ))}
+        ) : (
+          shifts.map(s => (
+            <div key={s.date} className="mobile-card !p-3 flex justify-between items-center border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <div className="flex flex-col">
+                <div className="font-bold text-[var(--text-main)] capitalize text-sm">{format(parseISO(s.date), 'EEEE', { locale: es })}</div>
+                <div className="text-[10px] text-[var(--text-muted)]">{format(parseISO(s.date), 'dd MMM yyyy')}</div>
+              </div>
+              <div className="text-[10px] font-bold font-mono bg-slate-100 dark:bg-white/5 px-2 py-1 rounded text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/5 shadow-sm">
+                SLOT {s.slot1UserId === user.id ? '1' : '2'}
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   )
