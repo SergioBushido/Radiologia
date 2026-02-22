@@ -211,9 +211,13 @@ export default function ReportPage() {
                     <span className="text-[10px] text-gray-500">{s.date}</span>
                   </div>
                   <div className="flex gap-8">
-                    <span className="font-black text-right min-w-[150px]">{usersMap[s.slot1UserId]}</span>
+                    <span className="font-black text-right min-w-[150px]">
+                      {usersMap[Number(s.slot1UserId)] || `P1 (ID ${s.slot1UserId})`}
+                    </span>
                     <span className="text-gray-300">|</span>
-                    <span className="font-black min-w-[150px]">{usersMap[s.slot2UserId]}</span>
+                    <span className="font-black min-w-[150px]">
+                      {usersMap[Number(s.slot2UserId)] || `P2 (ID ${s.slot2UserId})`}
+                    </span>
                   </div>
                 </div>
               ))}
