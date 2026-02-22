@@ -4,8 +4,8 @@ import { useAuth } from '../lib/useAuth'
 import { useToast } from '../components/ToastProvider'
 import { useLoading } from '../components/LoadingProvider'
 
-export default function Perfil() {
-    const { user, loading: authLoading } = useAuth()
+export default function Perfil({ theme, toggleTheme }: { theme: 'light' | 'dark', toggleTheme: () => void }) {
+    const { user, loading: authLoading, logout } = useAuth()
     const router = useRouter()
     const { addToast } = useToast()
     const { setLoading } = useLoading()
@@ -86,9 +86,34 @@ export default function Perfil() {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">{user.name}</h2>
-                            <span className="text-[10px] font-black px-2 py-1 bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded uppercase tracking-widest border border-medical-500/20">
-                                {user.role}
-                            </span>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-black px-2 py-1 bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded uppercase tracking-widest border border-medical-500/20">
+                                    {user.role}
+                                </span>
+                                {user.role === 'ADMIN' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => router.push('/admin')}
+                                        className="text-[10px] font-black px-2 py-1 bg-red-500/10 text-red-600 dark:text-red-400 rounded uppercase tracking-widest border border-red-500/20 hover:bg-red-500/20 transition-all font-bold"
+                                    >
+                                        Ir a Admin
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div className="ml-auto">
+                            <button
+                                type="button"
+                                onClick={toggleTheme}
+                                className="p-3 rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-all active:scale-95 border border-slate-200 dark:border-white/10"
+                                title="Cambiar tema"
+                            >
+                                {theme === 'dark' ? (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.344l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z" /></svg>
+                                ) : (
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                                )}
+                            </button>
                         </div>
                     </div>
 
@@ -149,6 +174,17 @@ export default function Perfil() {
                         >
                             Guardar Cambios
                         </button>
+
+                        <div className="pt-6 mt-6 border-t border-slate-200 dark:border-white/10">
+                            <button
+                                type="button"
+                                onClick={logout}
+                                className="w-full p-4 rounded-xl bg-red-500/10 hover:bg-red-500 text-red-600 dark:text-red-400 hover:text-white font-bold transition-all border border-red-500/20 flex items-center justify-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                                Cerrar Sesión
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
