@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Validate bounds
-        if (points < 0 || points > 20) return res.status(400).json({ error: 'Points must be between 0 and 20' })
+        if (points < 0 || points > 20) return res.status(400).json({ error: 'Los puntos deben estar entre 0 y 20' })
 
         const existing = await prisma.shiftPreference.findMany({
             where: {
@@ -66,16 +66,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         })
 
-        // Calculate new total
-        // Exclude the one we are updating (if it exists)
-        const otherPrefs = existing.filter(p => p.date !== date)
-        const totalUsed = otherPrefs.reduce((sum: number, p: any) => sum + p.points, 0)
+        // Calculate new total for the specific type
+        const sameTypePrefs = existing.filter(p => p.date !== date && p.type === type)
+        const typeTotalUsed = sameTypePrefs.reduce((sum: number, p: any) => sum + p.points, 0)
 
-        // Only enforce limit strictly for users? Admins might override?
-        // Let's enforce it generally for consistency, but maybe allow override?
-        // Prompt says "assignle blocks points of the 20". So limit persists.
-        if (totalUsed + points > 20) {
-            return res.status(400).json({ error: `El usuario ha excedido el límite de 20 puntos mensuales. Le quedan ${20 - totalUsed}.` })
+        if (typeTotalUsed + points > 20) {
+            const label = type === 'PREFERENCE' ? 'Deseo Guardia' : 'Evitar Guardia'
+            return res.status(400).json({
+                error: `Has excedido el límite de 20 puntos para '${label}'. Te quedan ${20 - typeTotalUsed} puntos.`
+            })
         }
 
         // Save

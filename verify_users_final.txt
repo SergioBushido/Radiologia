@@ -1,0 +1,199 @@
+Current Users:
+- ID: 25, Name: De armas, Email: rdearmas83@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 26, Name: Serra, Email: Gab_9993@hotmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 27, Name: Fdez del Castillo, Email: esp272@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 39, Name: Monteverde, Email: f.monteverde.hdez@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 33, Name: Linares, Email: cristinaclb1812@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 31, Name: Núñez, Email: ninvil@hotmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 34, Name: Marichal, Email: cmarichalhdez@hotmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 21, Name: Admin, Email: admin@youshift.local
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 37, Name: Chueca, Email: danielchuecamartinez@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 32, Name: Souweileh, Email: carla.sarencibia@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 24, Name: Nieto, Email: luisaradazul@yahoo.es
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 38, Name: Alventosa, Email: elena.alventosa@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 28, Name: Vázquez, Email: victor.rxtf@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 30, Name: Muñoz, Email: ameliamun@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 29, Name: Paz, Email: spazmaya@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 36, Name: Cabrera, Email: laura_cabreraromero@yahoo.es
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 23, Name: Llanos, Email: jmllagom@gmail.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}
+- ID: 35, Name: Benítez, Email: soniabenitez@yahoo.com
+  Counts: {
+  shiftsSlot1: 0,
+  shiftsSlot2: 0,
+  blocks: 0,
+  preferences: 0,
+  vacations: 0,
+  messagesSent: 0,
+  messagesReceived: 0,
+  boardPosts: 0
+}

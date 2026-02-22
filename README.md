@@ -135,9 +135,9 @@ Pantalla para que cada usuario indique sus **preferencias** y **evitaciones (blo
     - Bloqueo (`BLOCK`) con X puntos.
 - Lógica de puntos:
   - Contador de puntos totales utilizados (`totalPointsUsed`).
-  - Máximo de **20 puntos** por mes (se muestra `pointsRemaining`).
-- Al tocar un día se abre `PointsModal`:
-  - Asignar preferencia (`PREFERENCE`, suma puntos).
+  - Sistema de **Deseo Guardia** (20 puntos) y **Evitar Guardia** (20 puntos independientes).
+  - Los puntos se asignan por día y se usan para priorizar o penalizar la asignación.
+  - Bloqueo Total (LOCK): Permite bloquear un día concreto (máximo 1 al mes).
   - Asignar bloqueo (`BLOCK`, también gasta puntos).
   - Poner 0 puntos elimina la preferencia.
 

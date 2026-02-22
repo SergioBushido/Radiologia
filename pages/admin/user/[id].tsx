@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { format, parseISO, startOfMonth, getDaysInMonth, getDay } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useToast } from '../../../components/ToastProvider'
+import { useLoading } from '../../../components/LoadingProvider'
 
 type Vacation = {
   id: number
@@ -13,8 +15,10 @@ type Vacation = {
 export default function AdminUser() {
   const router = useRouter()
   const { id } = router.query
+  const { addToast } = useToast()
+  const { setLoading } = useLoading()
   const [user, setUser] = useState<any>(null)
-  const [form, setForm] = useState<any>({ name: '', email: '', role: 'USER', group: '', password: '' })
+  const [form, setForm] = useState<any>({ name: '', email: '', role: 'USER', group: null, password: '', monthlyLimit: 999 })
   const [month, setMonth] = useState(() => {
     const d = new Date()
     return format(d, 'yyyy-MM')
@@ -24,10 +28,29 @@ export default function AdminUser() {
   useEffect(() => { if (id) { fetchUser(); fetchVacations() } }, [id, month])
 
   async function fetchUser() {
-    const res = await fetch(`/api/users/${id}`)
-    const data = await res.json()
-    setUser(data)
-    setForm((prev: any) => ({ ...prev, ...data }))
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`/api/users/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('Failed to fetch')
+      const data = await res.json()
+      setUser(data)
+      // Aseguramos que los campos se inicializan correctamente
+      setForm({
+        name: data.name || '',
+        email: data.email || '',
+        role: data.role || 'USER',
+        group: data.group || null,
+        monthlyLimit: data.monthlyLimit ?? 999,
+        password: '' // Siempre empezamos con password vacío
+      })
+    } catch (e) {
+      addToast('Error al cargar datos', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function fetchVacations() {
@@ -42,10 +65,27 @@ export default function AdminUser() {
   }
 
   async function save() {
-    if (!confirm('Guardar cambios?')) return
+    if (!confirm('¿Guardar cambios?')) return
     const token = localStorage.getItem('token')
-    const res = await fetch(`/api/users/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(form) })
-    if (res.ok) { alert('Guardado'); router.push('/admin') } else { alert('Error') }
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form)
+      })
+      if (res.ok) {
+        addToast('Cambios guardados correctamente', 'success')
+        router.push('/admin')
+      } else {
+        const d = await res.json()
+        addToast(d.error || 'Error al guardar', 'error')
+      }
+    } catch (e) {
+      addToast('Error de conexión', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!user) return <div className="p-4 bg-[var(--bg-main)] text-white h-screen">Cargando...</div>
@@ -112,7 +152,7 @@ export default function AdminUser() {
 
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1 text-indigo-400">Límite Mensual de Guardias</label>
-          <input type="number" value={form.monthlyLimit || 20} onChange={e => setForm({ ...form, monthlyLimit: parseInt(e.target.value) })} className="w-full p-4 bg-indigo-500/5 border-indigo-500/20 text-indigo-400 font-bold rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" min="0" />
+          <input type="number" value={form.monthlyLimit} onChange={e => setForm({ ...form, monthlyLimit: parseInt(e.target.value) || 0 })} className="w-full p-4 bg-indigo-500/5 border-indigo-500/20 text-indigo-400 font-bold rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none" min="0" />
         </div>
 
         <div className="space-y-1.5">

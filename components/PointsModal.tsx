@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -8,17 +8,33 @@ type Props = {
     onClose: () => void
     onSave: (type: 'PREFERENCE' | 'BLOCK', points: number) => void
     onDelete: () => void
-    pointsRemaining: number
+    prefPointsRemaining: number
+    blockPointsRemaining: number
 }
 
-export default function PointsModal({ date, existingPreference, onClose, onSave, onDelete, pointsRemaining }: Props) {
+export default function PointsModal({
+    date,
+    existingPreference,
+    onClose,
+    onSave,
+    onDelete,
+    prefPointsRemaining,
+    blockPointsRemaining
+}: Props) {
     const [type, setType] = useState<'PREFERENCE' | 'BLOCK'>(existingPreference?.type || 'PREFERENCE')
     const [points, setPoints] = useState<number>(existingPreference?.points || 1)
 
-    // Calcuylating max points allowable for this specific edit
-    // If editing, we get back the points we are using.
-    const currentUsed = existingPreference ? existingPreference.points : 0
+    // Calculating max points allowable for this specific edit
+    const pointsRemaining = type === 'PREFERENCE' ? prefPointsRemaining : blockPointsRemaining
+    const currentUsed = (existingPreference && existingPreference.type === type) ? existingPreference.points : 0
     const maxAllocatable = pointsRemaining + currentUsed
+
+    // Reset points if switching type makes current points invalid
+    useEffect(() => {
+        if (points > maxAllocatable) {
+            setPoints(Math.max(1, maxAllocatable))
+        }
+    }, [type, maxAllocatable])
 
     const handleSave = () => {
         if (points > maxAllocatable) {

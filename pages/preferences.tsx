@@ -85,9 +85,10 @@ export default function PreferencesPage() {
         savePreference('PREFERENCE', 0) // 0 deletes it
     }
 
-    // Helpers
-    const totalPointsUsed = preferences.reduce((sum, p) => sum + p.points, 0)
-    const pointsRemaining = 20 - totalPointsUsed
+    // Helpers - Always calculate based on CURRENT user even if admin sees all
+    const myPreferences = preferences.filter(p => p.userId === user?.id)
+    const prefPointsUsed = myPreferences.filter(p => p.type === 'PREFERENCE').reduce((sum, p) => sum + p.points, 0)
+    const blockPointsUsed = myPreferences.filter(p => p.type === 'BLOCK').reduce((sum, p) => sum + p.points, 0)
 
     const handlePrev = () => { const [y, m] = month.split('-'); let ny = Number(y); let nm = Number(m) - 1; if (nm < 1) { nm = 12; ny -= 1 } const mm = String(nm).padStart(2, '0'); setMonth(`${ny}-${mm}`) }
     const handleNext = () => { const [y, m] = month.split('-'); let ny = Number(y); let nm = Number(m) + 1; if (nm > 12) { nm = 1; ny += 1 } const mm = String(nm).padStart(2, '0'); setMonth(`${ny}-${mm}`) }
@@ -113,9 +114,15 @@ export default function PreferencesPage() {
                         <h1 className="font-bold text-lg">Mis Preferencias</h1>
                     </div>
 
-                    <div className="flex flex-col items-end">
-                        <span className="text-[10px] uppercase tracking-widest text-medical-100 font-extrabold">Puntos Restantes</span>
-                        <span className={`text-2xl font-black ${pointsRemaining < 5 ? 'text-red-300' : 'text-emerald-300'}`}>{pointsRemaining}</span>
+                    <div className="flex gap-4">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] uppercase tracking-widest text-medical-100 font-extrabold">Deseo g.</span>
+                            <span className={`text-xl font-black ${prefPointsUsed > 15 ? 'text-red-300' : 'text-emerald-300'}`}>{20 - prefPointsUsed}</span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[9px] uppercase tracking-widest text-medical-100 font-extrabold">Evitar g.</span>
+                            <span className={`text-xl font-black ${blockPointsUsed > 15 ? 'text-red-300' : 'text-emerald-300'}`}>{20 - blockPointsUsed}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -137,7 +144,8 @@ export default function PreferencesPage() {
                     {days.map(d => {
                         const dateObj = new Date(start.getFullYear(), start.getMonth(), d)
                         const dateStr = format(dateObj, 'yyyy-MM-dd')
-                        const pref = preferences.find(p => p.date === dateStr)
+                        // For the user grid, show ONLY my preferences clearly
+                        const pref = preferences.find(p => p.date === dateStr && p.userId === user?.id)
 
                         // Styles
                         let bgClass = "bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/10 shadow-sm"
@@ -171,7 +179,8 @@ export default function PreferencesPage() {
                 <PointsModal
                     date={selectedDate}
                     existingPreference={preferences.find(p => p.date === selectedDate)}
-                    pointsRemaining={pointsRemaining}
+                    prefPointsRemaining={20 - prefPointsUsed}
+                    blockPointsRemaining={20 - blockPointsUsed}
                     onClose={() => setSelectedDate(null)}
                     onSave={savePreference}
                     onDelete={deletePreference}

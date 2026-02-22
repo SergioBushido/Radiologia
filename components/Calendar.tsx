@@ -218,7 +218,7 @@ export default function Calendar() {
                               ? 'bg-red-600 text-white border-red-700 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
                               : 'bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
                             } shadow-sm`}>
-                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'EVITAR' : 'SOLICITAR'} {myPref.type !== 'LOCK' && `(${myPref.points}pts)`}
+                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'EVITAR' : 'DESEO'} {myPref.type !== 'LOCK' && `(${myPref.points}pts)`}
                           </div>
                         )}
                         {user?.role === 'ADMIN' && otherVacations.length > 0 && (
@@ -303,11 +303,17 @@ export default function Calendar() {
           existingPreference={preferences.find(p => p.date === selectedDate && p.userId === (targetUserIdToEdit || user?.id))}
           // If editing target, we might not know their remaining points easily without fetching? 
           // For now, let's calculate from loaded preferences if we have them all (Admin does).
-          pointsRemaining={(() => {
+          prefPointsRemaining={(() => {
             const uid = targetUserIdToEdit || user?.id
             if (!uid) return 20
-            // Admin fetches ALL prefs, so we can filter by uid
-            const userPrefs = preferences.filter(p => p.userId === uid)
+            const userPrefs = preferences.filter(p => p.userId === uid && p.type === 'PREFERENCE')
+            const used = userPrefs.filter(p => p.date !== selectedDate).reduce((sum, p) => sum + p.points, 0)
+            return 20 - used
+          })()}
+          blockPointsRemaining={(() => {
+            const uid = targetUserIdToEdit || user?.id
+            if (!uid) return 20
+            const userPrefs = preferences.filter(p => p.userId === uid && p.type === 'BLOCK')
             const used = userPrefs.filter(p => p.date !== selectedDate).reduce((sum, p) => sum + p.points, 0)
             return 20 - used
           })()}
