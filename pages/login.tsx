@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
+import { useAuth } from '../lib/useAuth'
 import { useToast } from '../components/ToastProvider'
 import { useLoading } from '../components/LoadingProvider'
 
@@ -10,8 +11,13 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const { user, refreshUser } = useAuth()
   const { addToast } = useToast()
   const { setLoading } = useLoading()
+
+  useEffect(() => {
+    if (user) router.push('/')
+  }, [user, router])
 
   async function submit(e: any) {
     e.preventDefault()
@@ -21,6 +27,7 @@ export default function Login() {
       if (res.ok) {
         const data = await res.json()
         localStorage.setItem('token', data.token)
+        await refreshUser()
         addToast('Login correcto', 'success')
         router.push('/')
       } else {
