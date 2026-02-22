@@ -6,8 +6,8 @@ import { useLoading } from '../components/LoadingProvider'
 import Logo from '../components/Logo'
 
 export default function Login() {
-  const [email, setEmail] = useState('admin@youshift.local')
-  const [password, setPassword] = useState('Password123!')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
   const { addToast } = useToast()
