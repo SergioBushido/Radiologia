@@ -11,9 +11,29 @@ export default function ReportPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const data = localStorage.getItem('lastGenerate')
-    if (data) {
-      setReport(JSON.parse(data))
+    const fetchReport = async () => {
+      const { id } = router.query
+      if (id) {
+        // Load from DB
+        const token = localStorage.getItem('token')
+        const res = await fetch(`/api/admin/reports/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const reportData = await res.json()
+          setReport(reportData.data) // The 'data' field has the actual report structure
+        }
+      } else {
+        // Fallback to localStorage (legacy/immediate)
+        const data = localStorage.getItem('lastGenerate')
+        if (data) {
+          setReport(JSON.parse(data))
+        }
+      }
+    }
+
+    if (router.isReady) {
+      fetchReport()
     }
 
     const fetchUsers = async () => {
@@ -27,7 +47,7 @@ export default function ReportPage() {
       }
     }
     fetchUsers()
-  }, [])
+  }, [router.isReady, router.query])
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 15

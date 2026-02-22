@@ -14,6 +14,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(422).json({ error: 'No se pudo encontrar una asignación válida que cumpla todas las restricciones.' })
     }
 
+    // Capture executor from token (if possible) for the report
+    const auth = req.headers.authorization?.split(' ')[1]
+    let executorId = 0
+    if (auth) {
+      const { verifyToken } = require('../../../lib/auth')
+      const decoded = verifyToken(auth)
+      if (decoded) executorId = decoded.userId
+    }
+
     // Save solution to DB
     for (const s of solution) {
       await prisma.shift.upsert({
@@ -23,7 +32,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    return res.json({ ok: true, createdCount: solution.length, shifts: solution })
+    // PERSIST REPORT
+    const report = await prisma.generationReport.create({
+      data: {
+        month,
+        userId: executorId,
+        data: {
+          month,
+          shifts: solution,
+          generatedAt: new Date().toISOString(),
+          executorId
+        }
+      }
+    })
+
+    return res.json({ ok: true, createdCount: solution.length, shifts: solution, reportId: report.id })
   } catch (err: any) {
     console.error(err)
     return res.status(500).json({ error: err.message })

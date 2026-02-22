@@ -28,6 +28,7 @@ model User {
   messagesSent   Message[]   @relation("Sender")
   messagesReceived Message[]  @relation("Receiver")
   boardPosts     BoardPost[]
+  generationReports GenerationReport[] @relation("ReportCreator")
   auditLogs      AuditLog[]
 
   @@map("User")
@@ -127,3 +128,14 @@ model BoardPost {
   @@map("BoardPost")
 }
 
+model GenerationReport {
+  id        Int      @id @default(autoincrement())
+  month     String   @map("month") // YYYY-MM
+  data      Json     @map("data")  // Full solution data
+  userId    Int      @map("userId")
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  createdBy User @relation("ReportCreator", fields: [userId], references: [id])
+
+  @@map("GenerationReport")
+}
