@@ -8,6 +8,7 @@ import LoadingProvider from '../components/LoadingProvider'
 import BottomNav from '../components/BottomNav'
 import ChatFloating from '../components/ChatFloating'
 import { MessageProvider } from '../lib/MessageContext'
+import { AuthProvider } from '../lib/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -43,15 +44,17 @@ export default function App({ Component, pageProps }: AppProps) {
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
       </Head>
-      <ToastProvider>
-        <LoadingProvider>
-          <MessageProvider>
-            <Component {...pageProps} toggleTheme={toggleTheme} theme={theme} />
-            {!isLoginPage && <BottomNav toggleTheme={toggleTheme} theme={theme} />}
-            <ChatFloating />
-          </MessageProvider>
-        </LoadingProvider>
-      </ToastProvider>
+      <AuthProvider>
+        <ToastProvider>
+          <LoadingProvider>
+            <MessageProvider>
+              <Component {...pageProps} toggleTheme={toggleTheme} theme={theme} />
+              {!isLoginPage && <BottomNav toggleTheme={toggleTheme} theme={theme} />}
+              <ChatFloating />
+            </MessageProvider>
+          </LoadingProvider>
+        </ToastProvider>
+      </AuthProvider>
     </div>
   )
 }
