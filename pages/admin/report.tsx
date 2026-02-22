@@ -76,17 +76,22 @@ export default function ReportPage() {
             display: block !important; 
             visibility: visible !important;
             opacity: 1 !important;
+            color: black !important;
           }
           .mobile-card { 
             box-shadow: none !important; 
             border: 1px solid #eee !important;
-            break-inside: avoid;
             background: white !important;
             width: 100% !important;
             margin-bottom: 20px !important;
+            break-inside: auto !important;
           }
-          body { background: white !important; }
-          @page { margin: 1cm; size: auto; }
+          .print-list-item {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+          body { background: white !important; color: black !important; }
+          @page { margin: 1.5cm; size: auto; }
           .grid { display: block !important; }
         }
         .print-only { display: none; }
@@ -198,7 +203,7 @@ export default function ReportPage() {
             <h2 className="text-lg font-black mb-4 uppercase">Listado Completo</h2>
             <div className="space-y-1">
               {shifts.map((s: any, i: number) => (
-                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 break-inside-avoid">
+                <div key={i} className="flex justify-between items-center py-2 border-b border-gray-100 print-list-item">
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-black capitalize">
                       {format(parseISO(s.date), 'EEEE d MMMM', { locale: es })}
