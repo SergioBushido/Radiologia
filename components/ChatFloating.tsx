@@ -121,7 +121,7 @@ export default function ChatFloating() {
     if (!currentUser) return null
 
     return (
-        <div className="fixed bottom-4 right-4 z-[100] flex flex-col items-end">
+        <div className="fixed bottom-24 right-4 z-[100] flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
                 <div className="bg-[var(--bg-surface)] w-80 h-96 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col pointer-events-auto mb-4 overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
