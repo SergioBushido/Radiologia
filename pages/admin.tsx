@@ -52,9 +52,18 @@ export default function Admin() {
     const res = await fetch('/api/shifts/generate', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ month: selectedMonth }) })
     const data = await res.json()
     setLoading(false)
-    localStorage.setItem('lastGenerate', JSON.stringify(data))
-    addToast('Generador finalizado', 'info')
-    router.push('/admin/report')
+
+    if (res.ok) {
+      localStorage.setItem('lastGenerate', JSON.stringify(data))
+      addToast('Generador finalizado', 'info')
+      if (data.reportId) {
+        router.push(`/admin/report?id=${data.reportId}`)
+      } else {
+        router.push('/admin/report')
+      }
+    } else {
+      addToast(data.error || 'Error al generar', 'error')
+    }
   }
 
   if (loading) return <div className="p-4 bg-[var(--bg-main)] text-[var(--text-main)] h-screen">Cargando...</div>

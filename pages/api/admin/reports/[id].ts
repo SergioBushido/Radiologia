@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
         try {
-            const report = await prisma.generationReport.findUnique({
+            const report = await (prisma as any).generationReport.findUnique({
                 where: { id: Number(id) },
                 include: {
                     createdBy: {

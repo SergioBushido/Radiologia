@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (req.method === 'GET') {
         try {
-            const reports = await prisma.generationReport.findMany({
+            const reports = await (prisma as any).generationReport.findMany({
                 orderBy: { createdAt: 'desc' },
                 include: {
                     createdBy: {
