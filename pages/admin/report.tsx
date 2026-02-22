@@ -3,7 +3,6 @@ import { useRouter } from 'next/router'
 import Link from 'next/link'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
-import Head from 'next/head'
 
 export default function ReportPage() {
   const [report, setReport] = useState<any>(null)
@@ -69,21 +68,51 @@ export default function ReportPage() {
     catch { return dateStr }
   }
 
+  const handlePrint = () => {
+    const statsRows = Object.entries(stats).map(([uid, count]) =>
+      `<tr><td style="padding:5px 10px">${getName(uid)}</td><td style="padding:5px 10px;text-align:right;font-weight:900">${count} guardias</td></tr>`
+    ).join('')
+
+    const tableRows = shifts.map((s: any, i: number) =>
+      `<tr style="background:${i % 2 === 0 ? '#fff' : '#f9f9f9'};border-bottom:1px solid #eee">
+        <td style="padding:5px 10px;font-weight:bold;white-space:nowrap">${safeFormat(s.date)}</td>
+        <td style="padding:5px 10px">${getName(s.slot1UserId)}</td>
+        <td style="padding:5px 10px">${getName(s.slot2UserId)}</td>
+      </tr>`
+    ).join('')
+
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Reporte Guardias ${report.month || ''}</title>
+<style>
+  body{font-family:Arial,sans-serif;font-size:12px;margin:1.5cm;color:#000}
+  h1{font-size:18px;text-transform:uppercase;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:4px}
+  h2{font-size:13px;text-transform:uppercase;margin-top:24px;margin-bottom:6px;border-bottom:1px solid #ccc;padding-bottom:4px}
+  table{width:100%;border-collapse:collapse}
+  th{background:#eee;font-weight:900;text-align:left;padding:6px 10px;border-bottom:2px solid #333;text-transform:uppercase;font-size:10px;letter-spacing:.05em}
+  tr{page-break-inside:avoid}
+  @page{margin:1.5cm}
+</style>
+</head><body>
+<h1>Reporte de Guardias &mdash; ${report.month || ''}</h1>
+<p style="color:#666;margin-bottom:12px">Total: ${shifts.length} guardias generadas</p>
+<h2>Estad&iacute;sticas por profesional</h2>
+<table><thead><tr><th>Profesional</th><th style="text-align:right">Guardias</th></tr></thead><tbody>${statsRows}</tbody></table>
+<h2 style="margin-top:30px">Listado completo de guardias</h2>
+<table><thead><tr><th>Fecha</th><th>Profesional 1 (Slot 1)</th><th>Profesional 2 (Slot 2)</th></tr></thead><tbody>${tableRows}</tbody></table>
+</body></html>`
+
+    const win = window.open('', '_blank', 'width=900,height=700')
+    if (win) {
+      win.document.write(html)
+      win.document.close()
+      win.focus()
+      setTimeout(() => win.print(), 400)
+    }
+  }
+
   return (
     <>
-      <Head>
-        <style>{`
-          @media print {
-            .report-screen-only { display: none !important; }
-            .report-print-only  { display: block !important; }
-            .report-nav         { display: none !important; }
-            body { background: white !important; color: black !important; }
-            @page { margin: 1.5cm; }
-          }
-          .report-print-only { display: none; }
-        `}</style>
-      </Head>
-
       <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-main)] p-6 pb-20">
 
         {/* Nav – hidden in print */}
@@ -97,7 +126,7 @@ export default function ReportPage() {
             </h1>
           </div>
           <button
-            onClick={() => window.print()}
+            onClick={handlePrint}
             className="px-5 py-2.5 bg-medical-600 hover:bg-medical-500 text-white font-black rounded-xl shadow-xl shadow-medical-500/20 flex items-center gap-2 transition-all active:scale-95"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
