@@ -102,12 +102,29 @@ export default function ReportPage() {
 <table><thead><tr><th>Fecha</th><th>Profesional 1 (Slot 1)</th><th>Profesional 2 (Slot 2)</th></tr></thead><tbody>${tableRows}</tbody></table>
 </body></html>`
 
-    const win = window.open('', '_blank', 'width=900,height=700')
-    if (win) {
-      win.document.write(html)
-      win.document.close()
-      win.focus()
-      setTimeout(() => win.print(), 400)
+    // Use hidden iframe to avoid popup blocker
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;visibility:hidden'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentDocument || (iframe.contentWindow as any)?.document
+    if (doc) {
+      doc.open()
+      doc.write(html)
+      doc.close()
+      // Wait for iframe to render then print
+      setTimeout(() => {
+        try {
+          iframe.contentWindow?.focus()
+          iframe.contentWindow?.print()
+        } catch (e) {
+          console.error('Print error:', e)
+        }
+        // Clean up iframe after print dialog closes (1 min timeout)
+        setTimeout(() => {
+          try { document.body.removeChild(iframe) } catch (_) { }
+        }, 60000)
+      }, 600)
     }
   }
 
