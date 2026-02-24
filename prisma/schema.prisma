@@ -143,3 +143,10 @@ model GenerationReport {
 
   @@map("GenerationReport")
 }
+
+model MonthConfig {
+  month     String  @id // YYYY-MM
+  isBlocked Boolean @default(false)
+
+  @@map("MonthConfig")
+}

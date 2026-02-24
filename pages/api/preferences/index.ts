@@ -41,6 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         // Validation: Check total points for the month
         const monthPrefix = date.slice(0, 7) // YYYY-MM
 
+        // Check if month is blocked
+        const monthConfig = await prisma.monthConfig.findUnique({ where: { month: monthPrefix } })
+        if (monthConfig?.isBlocked && user.role !== 'ADMIN') {
+            return res.status(403).json({ error: `El mes ${monthPrefix} está bloqueado por administración.` })
+        }
+
         // Check for Lock limit (1 per month)
         if (type === 'LOCK' && user.role !== 'ADMIN') {
             const existingLock = await prisma.shiftPreference.findFirst({

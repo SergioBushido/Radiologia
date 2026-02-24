@@ -42,51 +42,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { date, userId } = req.body || {}
-    if (!date) return res.status(400).json({ error: 'date required (YYYY-MM-DD)' })
-
+    const { date, startDate, endDate, userId, type } = req.body || {}
     const targetUserId = userId ? Number(userId) : requester.id
-    if (!requireAdmin(requester) && targetUserId !== requester.id) {
+    const isAdmin = requireAdmin(requester)
+
+    if (!isAdmin && targetUserId !== requester.id) {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
-    // Evitar duplicados
-    const existing = await prisma.vacation.findFirst({
-      where: { userId: targetUserId, date }
-    })
-    if (existing) {
-      return res.status(400).json({ error: 'Vacation already exists for this date' })
+    // Determinar fechas a procesar
+    let dates: string[] = []
+    if (startDate && endDate) {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        dates.push(d.toISOString().split('T')[0])
+      }
+    } else if (date) {
+      dates = [date]
+    } else {
+      return res.status(400).json({ error: 'date or (startDate and endDate) required' })
     }
 
-    // No permitir vacaciones en un día donde ya tenga guardia
-    const shift = await prisma.shift.findFirst({
-      where: {
-        date,
-        OR: [{ slot1UserId: targetUserId }, { slot2UserId: targetUserId }]
-      }
+    // Verificar si algún mes está bloqueado
+    const months = Array.from(new Set(dates.map(d => d.substring(0, 7))))
+    const blockedMonths = await prisma.monthConfig.findMany({
+      where: { month: { in: months }, isBlocked: true }
     })
-    if (shift) {
-      return res.status(400).json({ error: 'User already has a shift on this date' })
+
+    if (!isAdmin && blockedMonths.length > 0) {
+      return res.status(403).json({ error: `Month ${blockedMonths[0].month} is blocked by admin` })
     }
 
     // Por simplicidad marcamos directamente como APPROVED
-    const data: any = {
-      userId: targetUserId,
-      date,
-      status: 'APPROVED',
-      type: req.body.type || 'VACATION',
-    }
+    // Usamos transaction para asegurar que se crean todas o ninguna
+    const results = await prisma.$transaction(
+      dates.map(d => {
+        return prisma.vacation.upsert({
+          where: { userId_date: { userId: targetUserId, date: d } },
+          update: {
+            status: 'APPROVED',
+            type: type || 'VACATION'
+          },
+          create: {
+            userId: targetUserId,
+            date: d,
+            status: 'APPROVED',
+            type: type || 'VACATION'
+          }
+        })
+      })
+    )
 
-    // Solo añadimos description si logramos sincronizar el esquema (por ahora lo quitamos si falla el sync)
-    // Para evitar el error actual, comentamos la línea o la envolvemos en try/catch.
-    // Pero lo más limpio es castear y que Prisma lo ignore si el modelo no lo tiene?
-    // No, Prisma valida contra el cliente generado.
-
-    const vacation = await prisma.vacation.create({
-      data
-    })
-
-    return res.json(vacation)
+    return res.json(results)
   }
 
   if (req.method === 'DELETE') {

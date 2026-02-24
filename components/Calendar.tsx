@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import PointsModal from './PointsModal'
 import DayEditor from './DayEditor'
 import DayDetailModal from './DayDetailModal'
+import BlockingRangeModal from './BlockingRangeModal'
 
 type Shift = { date: string, slot1UserId: number, slot2UserId: number }
 
@@ -22,11 +23,13 @@ export default function Calendar() {
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showBlockModal, setShowBlockModal] = useState(false)
+  const [showRangeModal, setShowRangeModal] = useState(false)
   const [targetUserIdToEdit, setTargetUserIdToEdit] = useState<number | null>(null)
   const [showDayEditor, setShowDayEditor] = useState(false)
 
   const [preferences, setPreferences] = useState<any[]>([])
   const [vacations, setVacations] = useState<any[]>([])
+  const [monthConfig, setMonthConfig] = useState<any>(null)
 
   useEffect(() => { fetchShifts() }, [month, user])
   async function fetchShifts() {
@@ -37,6 +40,13 @@ export default function Calendar() {
     const res = await fetch(`/api/shifts?month=${month}`, { headers })
     const data = await res.json()
     setShifts(data.shifts || [])
+
+    // Fetch month config
+    const confRes = await fetch('/api/config/months', { headers })
+    if (confRes.ok) {
+      const configs = await confRes.json()
+      setMonthConfig(configs.find((c: any) => c.month === month) || { month, isBlocked: false })
+    }
 
     if (token) {
       const ures = await fetch('/api/users', { headers })
@@ -85,16 +95,52 @@ export default function Calendar() {
     <div className="flex flex-col bg-[var(--bg-main)] min-h-[600px]">
       {/* Header Compacto */}
       <div className="flex-none p-4 pb-2">
-        <div className="flex items-center justify-between bg-[var(--bg-card)] backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-white/5 max-w-lg mx-auto w-full">
+        <div className="flex items-center justify-between bg-[var(--bg-card)] backdrop-blur-md p-3 rounded-2xl shadow-lg border border-slate-200 dark:border-white/5 max-w-lg mx-auto w-full relative">
           <button onClick={handlePrev} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-medical-400">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
           </button>
-          <div className="text-lg font-bold text-[var(--text-main)] capitalize tracking-tight">
-            {format(start, 'MMMM yyyy', { locale: es })}
+
+          <div className="flex items-center gap-2">
+            <div className={`text-lg font-bold text-[var(--text-main)] capitalize tracking-tight ${monthConfig?.isBlocked ? 'opacity-50' : ''}`}>
+              {format(start, 'MMMM yyyy', { locale: es })}
+            </div>
+            {monthConfig?.isBlocked && (
+              <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">BLOQUEADO</span>
+            )}
+            {user?.role === 'ADMIN' && (
+              <button
+                onClick={async () => {
+                  const token = localStorage.getItem('token')
+                  const res = await fetch('/api/config/months', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    body: JSON.stringify({ month, isBlocked: !monthConfig?.isBlocked })
+                  })
+                  if (res.ok) fetchShifts()
+                }}
+                className={`ml-2 p-1.5 rounded-lg transition-all ${monthConfig?.isBlocked ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400 hover:text-medical-600'}`}
+                title={monthConfig?.isBlocked ? 'Desbloquear mes' : 'Bloquear mes para usuarios'}
+              >
+                {monthConfig?.isBlocked
+                  ? <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
+                  : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" /></svg>
+                }
+              </button>
+            )}
           </div>
-          <button onClick={handleNext} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-medical-400">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-          </button>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setShowRangeModal(true)}
+              className="p-2 hover:bg-medical-50 dark:hover:bg-medical-500/10 rounded-xl transition-all text-medical-600 dark:text-medical-400 border border-transparent hover:border-medical-200"
+              title="Gestionar Rango de Vacaciones/Cursos/LD"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            </button>
+            <button onClick={handleNext} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-medical-600 dark:hover:text-medical-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -131,6 +177,7 @@ export default function Calendar() {
                   group relative flex flex-col items-center justify-start p-1 cursor-pointer
                   bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none hover:bg-slate-50 dark:hover:bg-white/[0.08] backdrop-blur-sm rounded-xl border-2
                   ${isToday ? 'border-medical-500 ring-1 ring-medical-500/20 bg-medical-50/50 dark:bg-medical-500/10' : 'border-slate-200 dark:border-white/10'} 
+                  ${monthConfig?.isBlocked && user?.role !== 'ADMIN' ? 'opacity-60 grayscale-[0.5]' : ''}
                   hover:shadow-lg dark:hover:shadow-black/20 hover:scale-[1.02] hover:z-10 transition-all duration-200 ease-out
                 `}
               >
@@ -161,7 +208,7 @@ export default function Calendar() {
                       return (
                         <div className="flex gap-1 justify-center flex-wrap">
                           {myVacations.map(v => (
-                            <div key={v.id} className={`w-1.5 h-1.5 rounded-full ${v.type === 'COURSE' ? 'bg-amber-500' : 'bg-green-500'}`} title={v.type === 'COURSE' ? 'Mi curso' : 'Mis vacaciones'}></div>
+                            <div key={v.id} className={`w-1.5 h-1.5 rounded-full ${v.type === 'COURSE' ? 'bg-amber-500' : v.type === 'LD' ? 'bg-medical-500' : 'bg-green-500'}`} title={v.type === 'COURSE' ? 'Curso' : v.type === 'LD' ? 'LD' : 'Vacaciones'}></div>
                           ))}
                           {myPref && (
                             <div className={`w-1.5 h-1.5 rounded-full ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
@@ -209,9 +256,11 @@ export default function Calendar() {
                         {myVacations.map(v => (
                           <div key={v.id} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-0.5 ${v.type === 'COURSE'
                             ? 'bg-amber-600 dark:bg-amber-500/20 text-white dark:text-amber-300 border-amber-700 dark:border-amber-500/30'
-                            : 'bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30'
+                            : v.type === 'LD'
+                              ? 'bg-medical-600 dark:bg-medical-500/20 text-white dark:text-medical-300 border-medical-700 dark:border-medical-500/30'
+                              : 'bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30'
                             } shadow-sm`}>
-                            {v.type === 'COURSE' ? 'CURSO' : 'VACACIONES'}
+                            {v.type === 'COURSE' ? 'CURSO' : v.type === 'LD' ? 'LIBRE DISP.' : 'VACACIONES'}
                           </div>
                         ))}
                         {myPref && (
@@ -253,6 +302,7 @@ export default function Calendar() {
           currentUserId={user?.id}
           preferences={preferences.filter(p => p.date === selectedDate)}
           vacations={vacations.filter(v => v.date === selectedDate)}
+          isMonthBlocked={monthConfig?.isBlocked}
           onClose={() => setShowDetailModal(false)}
           onEdit={() => {
             // If manual edit of shift
@@ -296,6 +346,14 @@ export default function Calendar() {
           }}
           onPreferencesUpdated={fetchShifts}
           onVacationsUpdated={fetchShifts}
+        />
+      )}
+
+      {showRangeModal && (
+        <BlockingRangeModal
+          onClose={() => setShowRangeModal(false)}
+          onSave={fetchShifts}
+          isAdmin={user?.role === 'ADMIN'}
         />
       )}
 
