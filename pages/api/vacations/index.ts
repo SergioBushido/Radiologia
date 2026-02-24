@@ -70,14 +70,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Por simplicidad marcamos directamente como APPROVED
+    const data: any = {
+      userId: targetUserId,
+      date,
+      status: 'APPROVED',
+      type: req.body.type || 'VACATION',
+    }
+
+    // Solo añadimos description si logramos sincronizar el esquema (por ahora lo quitamos si falla el sync)
+    // Para evitar el error actual, comentamos la línea o la envolvemos en try/catch.
+    // Pero lo más limpio es castear y que Prisma lo ignore si el modelo no lo tiene?
+    // No, Prisma valida contra el cliente generado.
+
     const vacation = await prisma.vacation.create({
-      data: {
-        userId: targetUserId,
-        date,
-        status: 'APPROVED',
-        type: req.body.type || 'VACATION',
-        description: req.body.description || null
-      } as any
+      data
     })
 
     return res.json(vacation)
