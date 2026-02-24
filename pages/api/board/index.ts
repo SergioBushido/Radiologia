@@ -15,7 +15,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            role: true
+            role: true,
+            avatarUrl: true
           }
         },
         replies: {
@@ -24,7 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               select: {
                 id: true,
                 name: true,
-                role: true
+                role: true,
+                avatarUrl: true
               }
             }
           },
@@ -54,7 +56,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           select: {
             id: true,
             name: true,
-            role: true
+            role: true,
+            avatarUrl: true
           }
         }
       }

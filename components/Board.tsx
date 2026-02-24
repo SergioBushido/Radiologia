@@ -3,6 +3,7 @@ import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from './ToastProvider'
+import UserAvatar from './UserAvatar'
 
 type BoardPost = {
   id: number
@@ -14,6 +15,7 @@ type BoardPost = {
     id: number
     name: string
     role: string
+    avatarUrl?: string | null
   }
   replies?: BoardPost[]
 }
@@ -147,12 +149,12 @@ export default function Board() {
                 <div className="flex items-start justify-between gap-2 sm:gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2 sm:gap-3 mb-3">
-                      <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md transition-transform duration-300 group-hover:scale-110 ${post.user.role === 'ADMIN'
-                        ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white ring-2 ring-medical-300/50 dark:ring-medical-500/30'
-                        : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
-                        }`}>
-                        {post.user.name.charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar
+                        name={post.user.name}
+                        avatarUrl={post.user.avatarUrl}
+                        role={post.user.role}
+                        size="md"
+                      />
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
                           <span className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100 truncate">
@@ -198,12 +200,12 @@ export default function Board() {
                       <div key={reply.id} className="flex items-start justify-between gap-2 sm:gap-3 group/reply">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-start gap-2 sm:gap-2.5 mb-2">
-                            <div className={`flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs shadow-sm transition-transform duration-200 group-hover/reply:scale-105 ${reply.user.role === 'ADMIN'
-                              ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white ring-1 ring-medical-300/50 dark:ring-medical-500/30'
-                              : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300 ring-1 ring-slate-200 dark:ring-slate-700'
-                              }`}>
-                              {reply.user.name.charAt(0).toUpperCase()}
-                            </div>
+                            <UserAvatar
+                              name={reply.user.name}
+                              avatarUrl={reply.user.avatarUrl}
+                              role={reply.user.role}
+                              size="sm"
+                            />
                             <div className="flex-1 min-w-0">
                               <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
                                 <span className="font-bold text-xs sm:text-sm text-black dark:text-slate-100 truncate">
@@ -311,12 +313,12 @@ export default function Board() {
         {/* New Message Input */}
         <div className="border-t border-slate-200/60 dark:border-white/10 p-3 sm:p-4 md:p-6 bg-gradient-to-b from-white/80 to-slate-50/80 dark:from-slate-900/80 dark:to-slate-800/50 backdrop-blur-sm">
           <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <div className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-800 ${user?.role === 'ADMIN'
-              ? 'bg-gradient-to-br from-medical-500 to-teal-600 text-white'
-              : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-700 dark:text-slate-300'
-              }`}>
-              {user?.name?.charAt(0).toUpperCase()}
-            </div>
+            <UserAvatar
+              name={user?.name}
+              avatarUrl={user?.avatarUrl}
+              role={user?.role}
+              size="md"
+            />
             <div className="flex-1 min-w-0">
               <span className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 block truncate">{user?.name}</span>
               <span className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">Escribe un mensaje público</span>

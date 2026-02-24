@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useAuth } from '../lib/useAuth'
 import { useMessages } from '../lib/MessageContext'
-import ChatFloating from '../components/ChatFloating' // Reusing logic? No, let's make a full page version or just wrap it?
+import ChatFloating from '../components/ChatFloating'
+import UserAvatar from '../components/UserAvatar' // Reusing logic? No, let's make a full page version or just wrap it?
 // ChatFloating is a floating widget. A full page needs standard structure.
 // Let's copy the logic or create a Chat component properly.
 // For speed, I'll copy the logic into a full page component.
@@ -15,13 +16,14 @@ type Message = {
     receiverId: number
     isRead: boolean
     createdAt: string
-    sender?: { name: string, role: string }
+    sender?: { name: string, role: string, avatarUrl?: string | null }
 }
 
 type User = {
     id: number
     name: string
     role: string
+    avatarUrl?: string | null
 }
 
 export default function MessagesPage() {
@@ -112,7 +114,12 @@ export default function MessagesPage() {
                             {conversations.length === 0 && <div className="text-center p-8 text-slate-400">No hay conversaciones activas.</div>}
                             {conversations.map(u => (
                                 <button key={u.id} onClick={() => setTargetUser(u)} className="w-full text-left p-4 bg-white dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-indigo-500 flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">{u.name.charAt(0)}</div>
+                                    <UserAvatar
+                                        name={u.name}
+                                        avatarUrl={u.avatarUrl}
+                                        role={u.role}
+                                        size="md"
+                                    />
                                     <div>
                                         <div className="font-bold">{u.name}</div>
                                         <div className="text-xs opacity-70">{u.role}</div>

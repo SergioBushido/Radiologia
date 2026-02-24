@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 const userIds = Array.from(new Set(messages.map(m => m.senderId === user.id ? m.receiverId : m.senderId)))
                 const users = await prisma.user.findMany({
                     where: { id: { in: userIds } },
-                    select: { id: true, name: true, role: true }
+                    select: { id: true, name: true, role: true, avatarUrl: true }
                 })
 
                 // Get unread counts for each contact
@@ -95,7 +95,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const messages = await prisma.message.findMany({
             where: whereClause,
             orderBy: { createdAt: 'asc' },
-            include: { sender: { select: { name: true, role: true } } }
+            include: { sender: { select: { name: true, role: true, avatarUrl: true } } }
         })
 
         // Mark as read if I am the receiver

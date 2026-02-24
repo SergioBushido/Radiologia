@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useMessages } from '../lib/MessageContext'
+import UserAvatar from './UserAvatar'
 
 type Message = {
     id: number
@@ -9,13 +10,14 @@ type Message = {
     receiverId: number
     isRead: boolean
     createdAt: string
-    sender?: { name: string, role: string }
+    sender?: { name: string, role: string, avatarUrl?: string | null }
 }
 
 type User = {
     id: number
     name: string
     role: string
+    avatarUrl?: string | null
     unreadCount?: number
 }
 
@@ -156,7 +158,12 @@ export default function ChatFloating() {
                                         onClick={() => setTargetUser(u)}
                                         className="w-full text-left p-3 bg-white dark:bg-white/5 rounded-xl border-2 border-slate-100 dark:border-white/5 hover:border-medical-500 transition shadow-sm flex items-center gap-3 active:scale-[0.98]"
                                     >
-                                        <div className="w-8 h-8 rounded-full bg-medical-100 dark:bg-medical-500/20 text-medical-700 dark:text-medical-400 flex items-center justify-center font-black text-xs shrink-0">{u.name.charAt(0)}</div>
+                                        <UserAvatar
+                                            name={u.name}
+                                            avatarUrl={u.avatarUrl}
+                                            role={u.role}
+                                            size="sm"
+                                        />
                                         <div className="flex-1 min-w-0">
                                             <p className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">{u.name}</p>
                                             <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">{u.role}</p>
