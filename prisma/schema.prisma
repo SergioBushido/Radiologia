@@ -93,6 +93,7 @@ model Vacation {
   userId Int    @map("userId")
   date   String
   status String @default("APPROVED") // APPROVED, PENDING
+  type   String @default("VACATION") // VACATION, COURSE
 
   user User @relation(fields: [userId], references: [id])
 

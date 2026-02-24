@@ -74,7 +74,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       data: {
         userId: targetUserId,
         date,
-        status: 'APPROVED'
+        status: 'APPROVED',
+        type: req.body.type || 'VACATION',
+        description: req.body.description || null
       } as any
     })
 

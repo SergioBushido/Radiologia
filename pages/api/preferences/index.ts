@@ -78,8 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Save
-        if (points === 0 && type !== 'LOCK') {
-            // Remove if 0 points (and not a specific LOCK action)
+        if (points === 0) {
+            // Remove if 0 points
             await prisma.shiftPreference.deleteMany({
                 where: { userId: userId, date }
             })

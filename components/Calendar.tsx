@@ -155,25 +155,25 @@ export default function Calendar() {
                     (() => {
                       const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
                       const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
-                      const myVacation = vacations.find(v => v.date === date && v.userId === user?.id)
+                      const myVacations = vacations.filter(v => v.date === date && v.userId === user?.id)
                       const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
 
                       return (
                         <div className="flex gap-1 justify-center flex-wrap">
-                          {myVacation && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500" title="Mis vacaciones"></div>
-                          )}
+                          {myVacations.map(v => (
+                            <div key={v.id} className={`w-1.5 h-1.5 rounded-full ${v.type === 'COURSE' ? 'bg-amber-500' : 'bg-green-500'}`} title={v.type === 'COURSE' ? 'Mi curso' : 'Mis vacaciones'}></div>
+                          ))}
                           {myPref && (
                             <div className={`w-1.5 h-1.5 rounded-full ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
                           )}
                           {/* Admin sees dots for others' vacations and requests */}
                           {user?.role === 'ADMIN' && otherVacations.length > 0 && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={`${otherVacations.length} vacaciones`}></div>
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={`${otherVacations.length} personal bloqueado`}></div>
                           )}
                           {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
                             <div className="w-1.5 h-1.5 rounded-full bg-orange-400" title={`${otherPrefs.length} solicitudes`}></div>
                           )}
-                          {!myPref && !myVacation && (!otherPrefs.length || user?.role !== 'ADMIN') && (!otherVacations.length || user?.role !== 'ADMIN') && (
+                          {!myPref && myVacations.length === 0 && (!otherPrefs.length || user?.role !== 'ADMIN') && (!otherVacations.length || user?.role !== 'ADMIN') && (
                             <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
                           )}
                         </div>
@@ -201,16 +201,19 @@ export default function Calendar() {
                   {!s && (() => {
                     const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
                     const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
-                    const myVacation = vacations.find(v => v.date === date && v.userId === user?.id)
+                    const myVacations = vacations.filter(v => v.date === date && v.userId === user?.id)
                     const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
 
                     return (
                       <div className="flex flex-col gap-0.5">
-                        {myVacation && (
-                          <div className="text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30 shadow-sm">
-                            VACACIONES
+                        {myVacations.map(v => (
+                          <div key={v.id} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-0.5 ${v.type === 'COURSE'
+                            ? 'bg-amber-600 dark:bg-amber-500/20 text-white dark:text-amber-300 border-amber-700 dark:border-amber-500/30'
+                            : 'bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30'
+                            } shadow-sm`}>
+                            {v.type === 'COURSE' ? 'CURSO' : 'VACACIONES'}
                           </div>
-                        )}
+                        ))}
                         {myPref && (
                           <div className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 ${myPref.type === 'LOCK'
                             ? 'bg-slate-900 text-white border-black'
