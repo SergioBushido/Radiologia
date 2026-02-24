@@ -6,8 +6,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -18,6 +19,7 @@ model User {
   role         String    @default("USER")
   group        String?
   monthlyLimit Int       @default(999)
+  avatarUrl    String?   @map("avatarUrl")
   createdAt    DateTime  @default(now()) @map("createdAt")
 
   shiftsSlot1    Shift[]     @relation("Slot1User")

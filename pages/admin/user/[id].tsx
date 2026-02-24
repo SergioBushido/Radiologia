@@ -121,6 +121,23 @@ export default function AdminUser() {
         Editar Usuario
       </h1>
 
+      <div className="mobile-card max-w-md mx-auto mb-6 flex items-center gap-4 !p-4">
+        <div className="w-16 h-16 rounded-full overflow-hidden bg-indigo-500/10 border-2 border-indigo-500 flex items-center justify-center text-2xl font-black text-indigo-400 flex-shrink-0">
+          {user.avatarUrl ? (
+            <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            user.name?.charAt(0)
+          )}
+        </div>
+        <div>
+          <p className="font-bold text-white">{user.name}</p>
+          <p className="text-xs text-slate-400">{user.email}</p>
+          <span className="inline-block mt-1 text-[10px] font-black px-2 py-0.5 bg-indigo-500/10 text-indigo-400 rounded uppercase tracking-widest border border-indigo-500/20">
+            {user.role}
+          </span>
+        </div>
+      </div>
+
       <div className="mobile-card max-w-md mx-auto space-y-6">
         <div className="space-y-1.5">
           <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>

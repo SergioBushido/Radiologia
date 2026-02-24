@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'GET') {
     if (!requester) return res.status(401).json({ error: 'Unauthorized' })
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true, group: true, monthlyLimit: true } })
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, email: true, role: true, group: true, monthlyLimit: true, avatarUrl: true } })
     return res.json(user)
   }
   if (req.method === 'PUT') {
