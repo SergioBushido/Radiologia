@@ -81,3 +81,5 @@ jest-cache/
 # UPLOADS (si luego subes archivos)
 ############################
 public/uploads/
+.vercel
+.env*.local
