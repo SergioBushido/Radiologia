@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
+import { useAuth } from '../lib/useAuth'
 import { useMessages } from '../lib/MessageContext'
 import UserAvatar from './UserAvatar'
 
@@ -22,200 +23,183 @@ type User = {
 }
 
 export default function ChatFloating() {
+    const { user: currentUser } = useAuth()
+    const { unreadCount: totalUnread, refreshUnread } = useMessages()
     const [isOpen, setIsOpen] = useState(false)
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState('')
-    const [currentUser, setCurrentUser] = useState<User | null>(null)
-    const [targetUser, setTargetUser] = useState<User | null>(null) // For Admins selecting a user
-    const [conversations, setConversations] = useState<User[]>([]) // For Admins list
-    // const [unreadCount, setUnreadCount] = useState(0) // Removed for Global Context
-    const { unreadCount, refreshUnread } = useMessages()
-
+    const [targetUser, setTargetUser] = useState<User | null>(null)
+    const [conversations, setConversations] = useState<User[]>([])
+    const [allUsers, setAllUsers] = useState<User[]>([])
+    const [showUserList, setShowUserList] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
+    const [loading, setLoading] = useState(false)
     const router = useRouter()
+    const scrollRef = useRef<HTMLDivElement>(null)
 
-    // Load current user
-    useEffect(() => {
-        const token = localStorage.getItem('token')
-        if (!token) {
-            setCurrentUser(null)
-            return
-        }
-        // If we already have a user and token matches? No, logic is simple: fetch me.
-        // Optimization: if currentUser.id is same as decoded token? 
-        // Let's just fetch. It's cheap.
-        fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
-            .then(res => res.json())
-            .then(user => {
-                if (user.error) setCurrentUser(null)
-                else setCurrentUser(user)
-            })
-            .catch(() => setCurrentUser(null))
-    }, [router.asPath]) // Re-run on route change (e.g. login)
-
-    // Removed local poll for unread count (handled by Context)
-
-
-    // Poll for messages (every 3s if open)
+    // Initial load
     useEffect(() => {
         if (!isOpen || !currentUser) return
+        fetchConversations()
+        fetchAllUsers()
+    }, [isOpen, currentUser])
 
-        const fetchMessages = async () => {
-            const token = localStorage.getItem('token')
-            if (!token) return
-
-            // If Admin and no target selected, fetch conversations list
-            if (currentUser.role === 'ADMIN' && !targetUser) {
-                const res = await fetch('/api/messages', { headers: { Authorization: `Bearer ${token}` } })
-                if (res.ok) {
-                    const data = await res.json()
-                    setConversations(data.conversations || [])
-                }
-                return
-            }
-
-            // Fetch chat messages
-            let url = '/api/messages'
-            if (targetUser) url += `?targetUserId=${targetUser.id}`
-
-            const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-            if (res.ok) {
-                const data = await res.json()
-                // If it returns conversations (shouldn't happen with targetUserId param but check types)
-                if (Array.isArray(data)) {
-                    setMessages(data)
-                    // Update unread count locally since we just read them?
-                    // The API marks them as read.
-                }
-            }
-        }
-
-        fetchMessages()
-        const interval = setInterval(fetchMessages, 3000)
+    // Poll for chat
+    useEffect(() => {
+        if (!isOpen || !currentUser || !targetUser) return
+        const interval = setInterval(() => fetchChat(targetUser.id), 4000)
         return () => clearInterval(interval)
     }, [isOpen, currentUser, targetUser])
 
-    // Scroll to bottom
+    // Auto scroll
+    useEffect(() => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        }
+    }, [messages])
+
+    const fetchConversations = async () => {
+        const token = localStorage.getItem('token')
+        const res = await fetch('/api/messages', { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+            const data = await res.json()
+            setConversations(data.conversations || [])
+            refreshUnread()
+        }
+    }
+
+    const fetchAllUsers = async () => {
+        const token = localStorage.getItem('token')
+        const res = await fetch('/api/users', { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+            const data = await res.json()
+            setAllUsers(data.filter((u: User) => u.id !== currentUser?.id))
+        }
+    }
+
+    const fetchChat = async (userId: number) => {
+        const token = localStorage.getItem('token')
+        const res = await fetch(`/api/messages?targetUserId=${userId}`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+            const data = await res.json()
+            if (Array.isArray(data)) setMessages(data)
+        }
+    }
+
+    const selectUser = (user: User) => {
+        setTargetUser(user)
+        setMessages([])
+        fetchChat(user.id)
+        setShowUserList(false)
+    }
 
     const sendMessage = async () => {
-        if (!newMessage.trim()) return
+        if (!newMessage.trim() || !targetUser) return
         const token = localStorage.getItem('token')
-        const body: any = { content: newMessage }
-        if (targetUser) body.targetUserId = targetUser.id
-
-        const res = await fetch('/api/messages', {
+        setLoading(true)
+        await fetch('/api/messages', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify(body)
+            body: JSON.stringify({ content: newMessage, targetUserId: targetUser.id })
         })
-
-        if (res.ok) {
-            setNewMessage('')
-            // Optimistic update or wait for poll? polling is fast (3s).
-            // Let's refetch immediately for better UX
-            const token = localStorage.getItem('token')
-            let url = '/api/messages'
-            if (targetUser) url += `?targetUserId=${targetUser.id}`
-            const r2 = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-            if (r2.ok) setMessages(await r2.json())
-        }
+        setNewMessage('')
+        fetchChat(targetUser.id)
+        fetchConversations()
+        setLoading(false)
     }
 
     if (!currentUser) return null
 
+    const filteredUsers = allUsers.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()))
+
     return (
-        <div className="fixed bottom-24 right-4 z-[100] flex flex-col items-end">
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="bg-[var(--bg-surface)] w-80 h-96 rounded-2xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col pointer-events-auto mb-4 overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-medical-600 to-medical-800 p-4 text-white flex justify-between items-center shrink-0 shadow-lg">
-                        <div>
-                            <h3 className="font-bold">Mensajería</h3>
-                            {targetUser && <p className="text-xs text-medical-100">Chat con {targetUser.name}</p>}
+                <div className="w-[320px] sm:w-[380px] h-[500px] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-slate-200 dark:border-white/10 animate-in slide-in-from-bottom-10 duration-300 mb-4">
+                    <div className="bg-medical-600 p-4 text-white flex items-center justify-between shrink-0 shadow-lg">
+                        <div className="flex items-center gap-3">
+                            {targetUser && (
+                                <button onClick={() => setTargetUser(null)} className="p-1 hover:bg-white/20 rounded-lg">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                </button>
+                            )}
+                            <h3 className="font-black tracking-tight">{targetUser ? targetUser.name : 'Mensajes'}</h3>
                         </div>
-                        {targetUser && currentUser.role === 'ADMIN' && (
-                            <button onClick={() => setTargetUser(null)} className="text-xs bg-white/20 px-2 py-1 rounded-lg hover:bg-white/30 transition font-bold">
-                                Volver
-                            </button>
-                        )}
-                        {!targetUser && currentUser.role === 'ADMIN' && (
-                            <div className="text-xs text-medical-100 font-medium">Usuarios</div>
-                        )}
-                        <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                        <button onClick={() => setIsOpen(false)} className="opacity-70 hover:opacity-100"><svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>
                     </div>
 
-                    {/* Content */}
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50 dark:bg-black/20">
-                        {/* Admin List View */}
-                        {currentUser.role === 'ADMIN' && !targetUser ? (
+                    <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50 dark:bg-black/20">
+                        {showUserList ? (
                             <div className="space-y-2">
-                                {conversations.length === 0 && <p className="text-center text-sm text-[var(--text-muted)] mt-10">No hay conversaciones recientes.</p>}
-                                {conversations.map(u => (
-                                    <button
-                                        key={u.id}
-                                        onClick={() => setTargetUser(u)}
-                                        className="w-full text-left p-3 bg-white dark:bg-white/5 rounded-xl border-2 border-slate-100 dark:border-white/5 hover:border-medical-500 transition shadow-sm flex items-center gap-3 active:scale-[0.98]"
-                                    >
-                                        <UserAvatar
-                                            name={u.name}
-                                            avatarUrl={u.avatarUrl}
-                                            role={u.role}
-                                            size="sm"
-                                        />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-extrabold text-sm text-slate-900 dark:text-slate-100 truncate">{u.name}</p>
-                                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">{u.role}</p>
+                                <div className="flex items-center justify-between mb-4">
+                                    <span className="text-xs font-black uppercase text-slate-400">Seleccionar colega</span>
+                                    <button onClick={() => setShowUserList(false)} className="text-[10px] font-black text-medical-600 underline">Cerrar</button>
+                                </div>
+                                <input
+                                    type="text"
+                                    placeholder="Buscar..."
+                                    className="w-full p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-white/5 mb-4 text-xs outline-none focus:ring-1 focus:ring-medical-500"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    autoFocus
+                                />
+                                {filteredUsers.map(u => (
+                                    <button key={u.id} onClick={() => selectUser(u)} className="w-full flex items-center gap-3 p-2 hover:bg-white dark:hover:bg-white/5 rounded-xl border border-transparent hover:border-medical-500 transition-all">
+                                        <UserAvatar name={u.name} avatarUrl={u.avatarUrl} role={u.role} size="sm" />
+                                        <div className="text-left">
+                                            <p className="font-bold text-xs text-slate-900 dark:text-white">{u.name}</p>
+                                            <p className="text-[9px] text-slate-400 font-bold uppercase">{u.role}</p>
                                         </div>
-                                        {u.unreadCount && u.unreadCount > 0 && (
-                                            <div className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-black rounded-full shadow-md animate-pulse">
-                                                {u.unreadCount}
-                                            </div>
-                                        )}
                                     </button>
                                 ))}
                             </div>
-                        ) : (
-                            /* Chat View */
+                        ) : targetUser ? (
                             <div className="space-y-3">
-                                {messages.length === 0 && <p className="text-center text-xs text-[var(--text-muted)] mt-4">Inicio del chat.</p>}
                                 {messages.map(m => (
                                     <div key={m.id} className={`flex ${m.senderId === currentUser.id ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm shadow-md ${m.senderId === currentUser.id
-                                            ? 'bg-medical-600 text-white rounded-br-none'
-                                            : 'bg-white dark:bg-white/10 border-2 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white rounded-bl-none'
-                                            }`}>
-                                            {m.senderId !== currentUser.id && m.sender && (
-                                                <p className="text-[10px] font-black text-medical-600 dark:text-medical-400 mb-0.5">{m.sender.name}</p>
-                                            )}
-                                            <p className="font-medium leading-tight">{m.content}</p>
-                                            <span className={`text-[9px] font-bold block text-right mt-1 ${m.senderId === currentUser.id ? 'text-medical-100' : 'text-slate-500'}`}>
+                                        <div className={`max-w-[85%] rounded-2xl px-3 py-2 shadow-sm relative ${m.senderId === currentUser.id ? 'bg-medical-600 text-white rounded-br-none' : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-bl-none'}`}>
+                                            <p className="text-sm font-medium">{m.content}</p>
+                                            <span className={`text-[8px] font-bold block mt-1 text-right opacity-60 ${m.senderId === currentUser.id ? 'text-white' : 'text-slate-500'}`}>
                                                 {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <div className="flex justify-between items-center mb-4">
+                                    <span className="text-xs font-black uppercase text-slate-400">Conversaciones</span>
+                                    <button onClick={() => setShowUserList(true)} className="p-1.5 bg-medical-50 dark:bg-medical-500/10 text-medical-600 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg></button>
+                                </div>
+                                {conversations.length === 0 && <div className="text-center p-8 text-xs text-slate-400 font-bold">No hay chats activos</div>}
+                                {conversations.map(u => (
+                                    <button key={u.id} onClick={() => selectUser(u)} className="w-full flex items-center gap-3 p-3 bg-white dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-medical-500 transition shadow-sm relative group">
+                                        <UserAvatar name={u.name} avatarUrl={u.avatarUrl} role={u.role} size="sm" />
+                                        <div className="flex-1 text-left min-w-0">
+                                            <p className="font-extrabold text-sm text-slate-900 dark:text-white truncate">{u.name}</p>
+                                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-tighter">{u.role}</p>
+                                        </div>
+                                        {u.unreadCount ? (
+                                            <span className="absolute top-2 right-2 bg-medical-500 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black shadow-md">{u.unreadCount}</span>
+                                        ) : null}
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
 
-                    {/* Input */}
-                    {(currentUser.role !== 'ADMIN' || targetUser) && (
-                        <div className="p-3 bg-[var(--bg-surface)] border-t border-slate-200 dark:border-white/5 flex gap-2 shrink-0">
+                    {targetUser && !showUserList && (
+                        <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-white/5 flex gap-2">
                             <input
-                                type="text"
+                                className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900 dark:text-white font-medium"
+                                placeholder="Mensaje..."
                                 value={newMessage}
-                                onChange={(e) => setNewMessage(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                                placeholder="Escribe un mensaje..."
-                                className="flex-1 bg-slate-100 dark:bg-white/5 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-medical-500 text-slate-900 dark:text-white font-medium shadow-inner"
+                                onChange={e => setNewMessage(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && sendMessage()}
                             />
-                            <button
-                                onClick={sendMessage}
-                                disabled={!newMessage.trim()}
-                                className="p-2 bg-medical-600 text-white rounded-xl hover:bg-medical-500 disabled:opacity-50 transition shadow-lg active:scale-90"
-                            >
+                            <button onClick={sendMessage} disabled={!newMessage.trim() || loading} className="bg-medical-600 text-white p-2 rounded-xl disabled:opacity-50 active:scale-95 shadow-lg">
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                             </button>
                         </div>
@@ -223,14 +207,14 @@ export default function ChatFloating() {
                 </div>
             )}
 
-            {/* Floating Button */}
+            {/* FAB Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="bg-medical-600 text-white p-4 rounded-full shadow-[0_8px_30px_rgb(2,132,199,0.5)] hover:scale-110 active:scale-95 transition-all pointer-events-auto relative group z-[101]"
             >
-                {unreadCount > 0 && !isOpen && (
+                {totalUnread > 0 && !isOpen && (
                     <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-600 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-lg animate-bounce">
-                        {unreadCount}
+                        {totalUnread}
                     </span>
                 )}
                 <svg className="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">

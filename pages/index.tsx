@@ -28,7 +28,7 @@ export default function Home() {
           />
           <div>
             <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">
-              ¡Hola, <span className="text-medical-600 dark:text-medical-400">{user?.name}</span>!
+              ¡Hola, <span className="text-medical-600 dark:text-medical-400">{user?.name || 'Colega'}</span>!
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">Panel de Control</p>
           </div>

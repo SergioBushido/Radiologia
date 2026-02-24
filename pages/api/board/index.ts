@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             name: true,
             role: true,
             avatarUrl: true
-          }
+          } as any
         },
         replies: {
           include: {
@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 name: true,
                 role: true,
                 avatarUrl: true
-              }
+              } as any
             }
           },
           orderBy: { createdAt: 'asc' }
@@ -58,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             name: true,
             role: true,
             avatarUrl: true
-          }
+          } as any
         }
       }
     })

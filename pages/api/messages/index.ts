@@ -23,71 +23,48 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         let whereClause: any = {}
 
-        if (user.role === 'ADMIN') {
-            // Admin chatting with a specific user
-            if (!targetUserId) {
-                // Return list of users with unread messages or just recent chats?
-                // For now simplicity: If no target, return recent unique senders to admin?
-                // BETTER: The UI will likely ask for messages for a specific user.
-                // If no target, maybe return nothing or a list of recent conversations.
-                // Let's implement: List of users who have chatted with Admin.
+        // Get conversations list if no target specified
+        if (!targetUserId) {
+            // Get messages involving current user
+            const messages = await prisma.message.findMany({
+                where: { OR: [{ senderId: user.id }, { receiverId: user.id }] },
+                orderBy: { createdAt: 'desc' }
+            })
 
-                // Get distinct users involved in chat with admin
-                const messages = await prisma.message.findMany({
-                    where: {
-                        OR: [
-                            { senderId: user.id },
-                            { receiverId: user.id }
-                        ]
-                    },
+            // Unique user IDs from chats (excluding current user)
+            const contactIds = Array.from(new Set(messages.map(m => m.senderId === user.id ? m.receiverId : m.senderId)))
+            const contacts = await prisma.user.findMany({
+                where: { id: { in: contactIds, not: user.id } },
+                select: { id: true, name: true, role: true, avatarUrl: true } as any
+            })
+
+            // Enrich with unread count and last message
+            const conversations = await Promise.all(contacts.map(async (c) => {
+                const unreadCount = await prisma.message.count({
+                    where: { senderId: c.id, receiverId: user.id, isRead: false }
+                })
+                const lastMessage = await prisma.message.findFirst({
+                    where: { OR: [{ senderId: user.id, receiverId: c.id }, { senderId: c.id, receiverId: user.id }] },
                     orderBy: { createdAt: 'desc' },
-                    distinct: ['senderId', 'receiverId'] // Not perfect, but helps find recent contacts
+                    select: { content: true, createdAt: true } as any
                 })
+                return { ...c, unreadCount, lastMessage }
+            }))
 
-                // Extract user IDs and fetch user details
-                const userIds = Array.from(new Set(messages.map(m => m.senderId === user.id ? m.receiverId : m.senderId)))
-                const users = await prisma.user.findMany({
-                    where: { id: { in: userIds } },
-                    select: { id: true, name: true, role: true, avatarUrl: true }
-                })
+            // Sort by latest message
+            conversations.sort((a, b) => {
+                const dateA = a.lastMessage ? new Date(a.lastMessage.createdAt).getTime() : 0
+                const dateB = b.lastMessage ? new Date(b.lastMessage.createdAt).getTime() : 0
+                return dateB - dateA
+            })
 
-                // Get unread counts for each contact
-                const usersWithUnread = await Promise.all(users.map(async (u) => {
-                    const unreadCount = await prisma.message.count({
-                        where: {
-                            senderId: u.id,
-                            receiverId: user.id,
-                            isRead: false
-                        }
-                    })
-                    return { ...u, unreadCount }
-                }))
-
-                return res.json({ conversations: usersWithUnread })
-            } else {
-                // Fetch conversation with specific user
-                whereClause = {
-                    OR: [
-                        { senderId: user.id, receiverId: Number(targetUserId) },
-                        { senderId: Number(targetUserId), receiverId: user.id }
-                    ]
-                }
-            }
+            return res.json({ conversations })
         } else {
-            // Regular user: can only chat with Admins (or maybe specific support user?)
-            // Assumption: User chats with 'ADMIN' role users. 
-            // Since we don't know WHICH admin, maybe we broadcast or pick one?
-            // Simpler: User sees messages from ANY admin.
-
-            // Actually, let's keep it simple: Messages are between User and "System/Admins".
-            // But the DB structure is User-to-User.
-            // Let's assume there is at least one Admin.
-            // Or, we find the first Admin to send to?
-            // For fetching: Fetch all messages where I am sender or receiver.
+            // Chat with specific user
             whereClause = {
                 OR: [
-                    { senderId: user.id },
-                    { receiverId: user.id }
+                    { senderId: user.id, receiverId: Number(targetUserId) },
+                    { senderId: Number(targetUserId), receiverId: user.id }
                 ]
             }
         }
@@ -95,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const messages = await prisma.message.findMany({
             where: whereClause,
             orderBy: { createdAt: 'asc' },
-            include: { sender: { select: { name: true, role: true, avatarUrl: true } } }
+            include: { sender: { select: { name: true, role: true, avatarUrl: true } as any } }
         })
 
         // Mark as read if I am the receiver
