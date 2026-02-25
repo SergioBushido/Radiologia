@@ -160,8 +160,11 @@ export async function generateSchedule(month: string) {
      * Si retorna false, el usuario NO puede ser asignado a 'dateObj'.
      */
     function checkHardConstraints(u: UserState, dateStr: string, dateObj: Date): boolean {
-        // 1. Vacaciones: Si tiene vacación aprobada, descartar.
+        // 1. Vacaciones o Bloqueo Mensual (LOCK): Si tiene vacación aprobada o ha bloqueado el día, descartar.
         if (u.vacationDates.has(dateStr)) return false
+
+        const pref = u.preferenceByDate.get(dateStr)
+        if (pref && pref.type === 'LOCK') return false
 
         // 2. Límite mensual: No exceder el número máximo de guardias del usuario.
         const limit = u.monthlyLimit === 999 ? MAX_SHIFTS_DEFAULT : u.monthlyLimit

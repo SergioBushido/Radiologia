@@ -43,10 +43,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const { date, startDate, endDate, userId, type } = req.body || {}
+    const requesterIsAdmin = requireAdmin(requester)
     const targetUserId = userId ? Number(userId) : requester.id
-    const isAdmin = requireAdmin(requester)
 
-    if (!isAdmin && targetUserId !== requester.id) {
+    if (!requesterIsAdmin && targetUserId !== requester.id) {
       return res.status(403).json({ error: 'Forbidden' })
     }
 
@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: { month: { in: months }, isBlocked: true }
     })
 
-    if (!isAdmin && blockedMonths.length > 0) {
+    if (!requireAdmin(requester) && blockedMonths.length > 0) {
       return res.status(403).json({ error: `Month ${blockedMonths[0].month} is blocked by admin` })
     }
 

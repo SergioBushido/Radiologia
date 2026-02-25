@@ -31,6 +31,8 @@ export default function Calendar() {
   const [vacations, setVacations] = useState<any[]>([])
   const [monthConfig, setMonthConfig] = useState<any>(null)
 
+  const isAdmin = user?.role === 'ADMIN'
+
   useEffect(() => { fetchShifts() }, [month, user])
   async function fetchShifts() {
     const token = localStorage.getItem('token')
@@ -131,9 +133,10 @@ export default function Calendar() {
 
           <div className="flex items-center gap-1">
             <button
+              disabled={!isAdmin && monthConfig?.isBlocked}
               onClick={() => setShowRangeModal(true)}
-              className="p-2 hover:bg-medical-50 dark:hover:bg-medical-500/10 rounded-xl transition-all text-medical-600 dark:text-medical-400 border border-transparent hover:border-medical-200"
-              title="Gestionar Rango de Vacaciones/Cursos/LD"
+              className="p-2 hover:bg-medical-50 dark:hover:bg-medical-500/10 rounded-xl transition-all text-medical-600 dark:text-medical-400 border border-transparent hover:border-medical-200 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed"
+              title={!isAdmin && monthConfig?.isBlocked ? 'Mes bloqueado por administración' : 'Gestionar Rango de Vacaciones/Cursos/LD'}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             </button>
@@ -169,16 +172,22 @@ export default function Calendar() {
             const slot1Name = s ? (usersMap[s.slot1UserId] || `#${s.slot1UserId}`) : null
             const slot2Name = s ? (usersMap[s.slot2UserId] || `#${s.slot2UserId}`) : null
 
+            const isBlockedForUser = monthConfig?.isBlocked && user?.role !== 'ADMIN'
+
             return (
               <div
                 key={date}
-                onClick={() => handleDayClick(date)}
+                onClick={() => {
+                  if (isBlockedForUser) return // No interaction if blocked
+                  handleDayClick(date)
+                }}
                 className={`
-                  group relative flex flex-col items-center justify-start p-1 cursor-pointer
-                  bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none hover:bg-slate-50 dark:hover:bg-white/[0.08] backdrop-blur-sm rounded-xl border-2
+                  group relative flex flex-col items-center justify-start p-1 
+                  bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none backdrop-blur-sm rounded-xl border-2 transition-all duration-200 ease-out
+                  ${isBlockedForUser
+                    ? 'opacity-40 grayscale pointer-events-none'
+                    : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.08] hover:shadow-lg dark:hover:shadow-black/20 hover:scale-[1.02] hover:z-10'}
                   ${isToday ? 'border-medical-500 ring-1 ring-medical-500/20 bg-medical-50/50 dark:bg-medical-500/10' : 'border-slate-200 dark:border-white/10'} 
-                  ${monthConfig?.isBlocked && user?.role !== 'ADMIN' ? 'opacity-60 grayscale-[0.5]' : ''}
-                  hover:shadow-lg dark:hover:shadow-black/20 hover:scale-[1.02] hover:z-10 transition-all duration-200 ease-out
                 `}
               >
                 <div className={`
@@ -318,7 +327,7 @@ export default function Calendar() {
           onLock={async () => {
             // Hard Lock -> Direct API call
             const token = localStorage.getItem('token')
-            const body: any = { date: selectedDate, type: 'LOCK', points: 0 } // Points 0 for lock
+            const body: any = { date: selectedDate, type: 'LOCK', points: 1 } // Points 1 to avoid deletion
             if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit // Logic for admin? 
             // If I am user, I lock myself.
 

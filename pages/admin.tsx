@@ -73,7 +73,7 @@ export default function Admin() {
       <div className="mb-6 flex justify-between items-center">
         <div className="flex items-center gap-4">
           <Logo className="w-10 h-10" />
-          <h1 className="text-xl font-black text-medical-600 dark:text-medical-400">Admin Panel (v2)</h1>
+          <h1 className="text-xl font-black text-medical-600 dark:text-medical-400">Panel de Administración</h1>
         </div>
         <input
           type="month"
