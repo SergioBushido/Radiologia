@@ -5,6 +5,7 @@ import PointsModal from './PointsModal'
 import DayEditor from './DayEditor'
 import DayDetailModal from './DayDetailModal'
 import BlockingRangeModal from './BlockingRangeModal'
+import { useConfirm } from './ConfirmProvider'
 
 type Shift = { date: string, slot1UserId: number, slot2UserId: number }
 
@@ -12,6 +13,7 @@ import { useAuth } from '../lib/useAuth'
 
 export default function Calendar() {
   const { user } = useAuth()
+  const { confirm } = useConfirm()
   const [month, setMonth] = useState(() => {
     const d = new Date()
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -320,10 +322,16 @@ export default function Calendar() {
             // Hard Lock -> Direct API call
             const token = localStorage.getItem('token')
             const body: any = { date: selectedDate, type: 'LOCK', points: 1 } // Points 1 to avoid deletion
-            if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit // Logic for admin? 
-            // If I am user, I lock myself.
+            if (targetUserIdToEdit) body.targetUserId = targetUserIdToEdit
 
-            if (confirm('¿Seguro que quieres bloquear este día? No se te asignará guardia.')) {
+            const ok = await confirm({
+              title: '¿Bloquear día?',
+              message: 'Si bloqueas este día, el sistema no te asignará ninguna guardia. Esta acción es definitiva para el sorteo.',
+              confirmText: 'Bloquear día',
+              type: 'danger'
+            })
+
+            if (ok) {
               const res = await fetch('/api/preferences', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },

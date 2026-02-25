@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale'
 import { useAuth } from '../lib/useAuth'
 import { useToast } from './ToastProvider'
 import UserAvatar from './UserAvatar'
+import { useConfirm } from './ConfirmProvider'
 
 type BoardPost = {
   id: number
@@ -23,6 +24,7 @@ type BoardPost = {
 export default function Board() {
   const { user } = useAuth()
   const { addToast } = useToast()
+  const { confirm } = useConfirm()
   const [posts, setPosts] = useState<BoardPost[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [replyingTo, setReplyingTo] = useState<number | null>(null)
@@ -96,7 +98,14 @@ export default function Board() {
   }
 
   async function deletePost(id: number) {
-    if (!confirm('¿Eliminar este mensaje?')) return
+    const ok = await confirm({
+      title: '¿Eliminar mensaje?',
+      message: 'Esta acción no se puede deshacer y el mensaje desaparecerá para todo el equipo.',
+      confirmText: 'Eliminar',
+      type: 'danger'
+    })
+    if (!ok) return
+
     const token = localStorage.getItem('token')
     const res = await fetch(`/api/board?id=${id}`, {
       method: 'DELETE',
@@ -264,7 +273,7 @@ export default function Board() {
                       <button
                         onClick={() => sendReply(post.id)}
                         disabled={loading || !replyContent.trim()}
-                        className="flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-medical-600 to-teal-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:from-medical-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                        className={`flex-1 sm:flex-none px-4 py-2 bg-gradient-to-r from-medical-600 to-teal-600 text-white text-xs sm:text-sm font-bold rounded-lg hover:from-medical-500 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2 ${loading ? 'animate-pulse scale-[0.98] ring-2 ring-medical-500/30' : ''}`}
                       >
                         {loading ? (
                           <>
@@ -346,7 +355,7 @@ export default function Board() {
             <button
               onClick={sendMessage}
               disabled={loading || !newMessage.trim()}
-              className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-medical-600 via-medical-700 to-teal-600 text-white text-sm sm:text-base font-bold rounded-xl sm:rounded-2xl hover:from-medical-500 hover:via-medical-600 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2"
+              className={`w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-medical-600 via-medical-700 to-teal-600 text-white text-sm sm:text-base font-bold rounded-xl sm:rounded-2xl hover:from-medical-500 hover:via-medical-600 hover:to-teal-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center gap-2 ${loading ? 'animate-pulse scale-[0.98] ring-4 ring-medical-500/20' : ''}`}
             >
               {loading ? (
                 <>

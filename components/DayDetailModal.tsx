@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useToast } from './ToastProvider'
+import { useConfirm } from './ConfirmProvider'
 
 type Props = {
     date: string
@@ -24,6 +25,7 @@ type Props = {
 export default function DayDetailModal({ date, shift, usersMap, userRole, currentUserId, preferences = [], vacations = [], onClose, onEdit, onBlock, onLock, disableLock, onPreferencesUpdated, onEditPreference, onVacationsUpdated, isMonthBlocked }: Props) {
     const d = parseISO(date)
     const { addToast } = useToast()
+    const { confirm } = useConfirm()
     const isAdmin = userRole === 'ADMIN'
     const canEdit = isAdmin || !isMonthBlocked
 
@@ -35,7 +37,14 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
             return
         }
         if (myLock) {
-            if (!confirm('¿Seguro que quieres eliminar el bloqueo de este día?')) return
+            const ok = await confirm({
+                title: '¿Eliminar bloqueo?',
+                message: 'Volverás a entrar en el sorteo de guardias para este día.',
+                confirmText: 'Eliminar Bloqueo',
+                type: 'danger'
+            })
+            if (!ok) return
+
             const token = localStorage.getItem('token')
             const res = await fetch('/api/preferences', {
                 method: 'POST',
@@ -62,7 +71,14 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
             addToast('Mes bloqueado', 'error')
             return
         }
-        if (!confirm('¿Eliminar esta solicitud/bloqueo?')) return
+        const ok = await confirm({
+            title: '¿Eliminar solicitud?',
+            message: 'Esta solicitud de puntos o deseo desaparecerá del historial.',
+            confirmText: 'Eliminar',
+            type: 'danger'
+        })
+        if (!ok) return
+
         const token = localStorage.getItem('token')
         const res = await fetch('/api/preferences', {
             method: 'POST',
