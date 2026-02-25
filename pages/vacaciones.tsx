@@ -38,7 +38,7 @@ export default function VacationsPage() {
     setLoadingVac(true)
     try {
       const token = localStorage.getItem('token')
-      const res = await fetch(`/api/vacations?month=${month}`, {
+      const res = await fetch(`/api/vacations?month=${month}&userId=${user.id}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {

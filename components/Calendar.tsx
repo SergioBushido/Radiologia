@@ -174,6 +174,12 @@ export default function Calendar() {
 
             const isBlockedForUser = monthConfig?.isBlocked && user?.role !== 'ADMIN'
 
+            const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
+            const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
+            const myVacations = vacations.filter(v => v.date === date && v.userId === user?.id)
+            const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
+            const hasPersonalEntries = myPref || myVacations.length > 0
+
             return (
               <div
                 key={date}
@@ -183,16 +189,19 @@ export default function Calendar() {
                 }}
                 className={`
                   group relative flex flex-col items-center justify-start p-1 
-                  bg-white dark:bg-white/[0.03] shadow-sm dark:shadow-none backdrop-blur-sm rounded-xl border-2 transition-all duration-200 ease-out
+                  shadow-sm dark:shadow-none backdrop-blur-sm rounded-xl border-2 transition-all duration-200 ease-out
+                  ${hasPersonalEntries
+                    ? 'bg-medical-50/50 dark:bg-medical-500/10 border-medical-300 dark:border-medical-500/40 z-[1] ring-2 ring-medical-500/20'
+                    : 'bg-white dark:bg-white/[0.03] border-slate-200 dark:border-white/10'}
                   ${isBlockedForUser
                     ? 'opacity-40 grayscale pointer-events-none'
                     : 'cursor-pointer hover:bg-slate-50 dark:hover:bg-white/[0.08] hover:shadow-lg dark:hover:shadow-black/20 hover:scale-[1.02] hover:z-10'}
-                  ${isToday ? 'border-medical-500 ring-1 ring-medical-500/20 bg-medical-50/50 dark:bg-medical-500/10' : 'border-slate-200 dark:border-white/10'} 
+                  ${isToday ? 'border-medical-600 ring-1 ring-medical-600/20 shadow-lg' : ''} 
                 `}
               >
                 <div className={`
                   text-sm font-extrabold mb-1
-                  ${isToday ? 'text-medical-700 dark:text-medical-400' : 'text-slate-900 dark:text-slate-200'}
+                  ${isToday ? 'text-medical-800 dark:text-medical-400' : hasPersonalEntries ? 'text-medical-900 dark:text-medical-100' : 'text-slate-900 dark:text-slate-200'}
                 `}>
                   {format(d, 'dd')}
                 </div>
@@ -208,33 +217,24 @@ export default function Calendar() {
                       <div className="w-1.5 h-1.5 rounded-full bg-medical-500 shadow-[0_0_8px_rgba(2,132,199,0.6)]"></div>
                     </div>
                   ) : (
-                    (() => {
-                      const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
-                      const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
-                      const myVacations = vacations.filter(v => v.date === date && v.userId === user?.id)
-                      const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
-
-                      return (
-                        <div className="flex gap-1 justify-center flex-wrap">
-                          {myVacations.map(v => (
-                            <div key={v.id} className={`w-1.5 h-1.5 rounded-full ${v.type === 'COURSE' ? 'bg-amber-500' : v.type === 'LD' ? 'bg-medical-500' : 'bg-green-500'}`} title={v.type === 'COURSE' ? 'Curso' : v.type === 'LD' ? 'LD' : 'Vacaciones'}></div>
-                          ))}
-                          {myPref && (
-                            <div className={`w-1.5 h-1.5 rounded-full ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
-                          )}
-                          {/* Admin sees dots for others' vacations and requests */}
-                          {user?.role === 'ADMIN' && otherVacations.length > 0 && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-400" title={`${otherVacations.length} personal bloqueado`}></div>
-                          )}
-                          {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400" title={`${otherPrefs.length} solicitudes`}></div>
-                          )}
-                          {!myPref && myVacations.length === 0 && (!otherPrefs.length || user?.role !== 'ADMIN') && (!otherVacations.length || user?.role !== 'ADMIN') && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-slate-800"></div>
-                          )}
-                        </div>
-                      )
-                    })()
+                    <div className="flex gap-1 justify-center flex-wrap">
+                      {myVacations.map(v => (
+                        <div key={v.id} className={`w-2 h-2 rounded-full ring-2 ring-white dark:ring-black ${v.type === 'COURSE' ? 'bg-amber-500' : v.type === 'LD' ? 'bg-medical-500' : 'bg-green-500'}`} title={v.type === 'COURSE' ? 'Curso' : v.type === 'LD' ? 'LD' : 'Vacaciones'}></div>
+                      ))}
+                      {myPref && (
+                        <div className={`w-2 h-2 rounded-full ring-2 ring-white dark:ring-black ${myPref.type === 'LOCK' ? 'bg-black dark:bg-white' : myPref.type === 'BLOCK' ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                      )}
+                      {/* Admin sees smaller dots for others' vacations and requests */}
+                      {user?.role === 'ADMIN' && otherVacations.length > 0 && (
+                        <div className="w-1 h-1 rounded-full bg-green-400 opacity-60" title={`${otherVacations.length} personal bloqueado`}></div>
+                      )}
+                      {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
+                        <div className="w-1 h-1 rounded-full bg-orange-400 opacity-60" title={`${otherPrefs.length} solicitudes`}></div>
+                      )}
+                      {!hasPersonalEntries && (!otherPrefs.length || user?.role !== 'ADMIN') && (!otherVacations.length || user?.role !== 'ADMIN') && (
+                        <div className="w-1 h-1 rounded-full bg-slate-200 dark:bg-slate-800"></div>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -253,48 +253,40 @@ export default function Calendar() {
                     <div className="text-[10px] text-slate-800 dark:text-slate-500 text-center italic py-2 font-bold opacity-80">Libre</div>
                   )}
 
-                  {/* Show MY preference and vacations if no shift */}
-                  {!s && (() => {
-                    const myPref = preferences.find(p => p.date === date && p.userId === user?.id)
-                    const otherPrefs = preferences.filter(p => p.date === date && p.userId !== user?.id)
-                    const myVacations = vacations.filter(v => v.date === date && v.userId === user?.id)
-                    const otherVacations = vacations.filter(v => v.date === date && v.userId !== user?.id)
-
-                    return (
-                      <div className="flex flex-col gap-0.5">
-                        {myVacations.map(v => (
-                          <div key={v.id} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-0.5 ${v.type === 'COURSE'
-                            ? 'bg-amber-600 dark:bg-amber-500/20 text-white dark:text-amber-300 border-amber-700 dark:border-amber-500/30'
-                            : v.type === 'LD'
-                              ? 'bg-medical-600 dark:bg-medical-500/20 text-white dark:text-medical-300 border-medical-700 dark:border-medical-500/30'
-                              : 'bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30'
-                            } shadow-sm`}>
-                            {v.type === 'COURSE' ? 'CURSO' : v.type === 'LD' ? 'LIBRE DISP.' : 'VACACIONES'}
-                          </div>
-                        ))}
-                        {myPref && (
-                          <div className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 ${myPref.type === 'LOCK'
-                            ? 'bg-slate-900 text-white border-black'
-                            : myPref.type === 'BLOCK'
-                              ? 'bg-red-600 text-white border-red-700 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20'
-                              : 'bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20'
-                            } shadow-sm`}>
-                            {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'EVITAR' : 'DESEO'} {myPref.type !== 'LOCK' && `(${myPref.points}pts)`}
-                          </div>
-                        )}
-                        {user?.role === 'ADMIN' && otherVacations.length > 0 && (
-                          <div className="text-[9px] font-bold px-1.5 py-0.5 rounded border-2 bg-green-100 dark:bg-green-500/10 text-green-800 dark:text-green-400 border-green-300 dark:border-green-500/20 shadow-sm">
-                            {otherVacations.length} PERSONAL VAC
-                          </div>
-                        )}
-                        {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
-                          <div className="text-[9px] font-bold px-1.5 py-0.5 rounded border-2 bg-orange-100 dark:bg-orange-500/10 text-orange-800 dark:text-orange-400 border-orange-300 dark:border-orange-500/20 shadow-sm mt-1">
-                            {otherPrefs.length} SOLICITUDES
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })()}
+                  {!s && (
+                    <div className="flex flex-col gap-0.5">
+                      {myVacations.map(v => (
+                        <div key={v.id} className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-0.5 ${v.type === 'COURSE'
+                          ? 'bg-amber-600 dark:bg-amber-500/20 text-white dark:text-amber-300 border-amber-700 dark:border-amber-500/30 shadow-md'
+                          : v.type === 'LD'
+                            ? 'bg-medical-600 dark:bg-medical-500/20 text-white dark:text-medical-300 border-medical-700 dark:border-medical-500/30 shadow-md'
+                            : 'bg-green-600 dark:bg-green-500/20 text-white dark:text-green-300 border-green-700 dark:border-green-500/30 shadow-md'
+                          } scale-105 z-10`}>
+                          {v.type === 'COURSE' ? 'CURSO' : v.type === 'LD' ? 'LIBRE DISP.' : 'VACACIONES'}
+                        </div>
+                      ))}
+                      {myPref && (
+                        <div className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border-2 mb-1 ${myPref.type === 'LOCK'
+                          ? 'bg-slate-900 text-white border-black shadow-md'
+                          : myPref.type === 'BLOCK'
+                            ? 'bg-red-600 text-white border-red-700 dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 shadow-md'
+                            : 'bg-emerald-600 text-white border-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/30 shadow-md'
+                          } scale-105 z-10`}>
+                          {myPref.type === 'LOCK' ? 'BLOQUEADO' : myPref.type === 'BLOCK' ? 'EVITAR' : 'DESEO'} {myPref.type !== 'LOCK' && `(${myPref.points}pts)`}
+                        </div>
+                      )}
+                      {user?.role === 'ADMIN' && otherVacations.length > 0 && (
+                        <div className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-green-300 dark:border-green-500/20 bg-green-50/50 dark:bg-green-500/5 text-green-700 dark:text-green-500 opacity-60">
+                          {otherVacations.length} PERS. VAC
+                        </div>
+                      )}
+                      {user?.role === 'ADMIN' && otherPrefs.length > 0 && (
+                        <div className="text-[8px] font-bold px-1.5 py-0.5 rounded border border-orange-300 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/5 text-orange-700 dark:text-orange-500 opacity-60 mt-0.5">
+                          {otherPrefs.length} SOLICITUDES
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )

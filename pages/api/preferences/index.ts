@@ -16,9 +16,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
 
         // Si NO es admin, solo devuelve sus propias preferencias
-        // Si ES admin, devuelve las de TODOS para ese mes
+        // Si ES admin y NO se pasa userId, devuelve las de TODOS
         if (user.role !== 'ADMIN') {
             whereClause.userId = user.id
+        } else if (req.query.userId) {
+            whereClause.userId = Number(req.query.userId)
         }
 
         const preferences = await prisma.shiftPreference.findMany({
