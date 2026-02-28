@@ -7,7 +7,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const requester = await getUserFromReq(req)
   if (req.method === 'GET') {
     if (!requester) return res.status(401).json({ error: 'Unauthorized' })
-    const users = await prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, group: true, avatarUrl: true } as any })
+    const users = await prisma.user.findMany({
+      where: requester.email === 'test@user.com'
+        ? {}
+        : { NOT: { email: 'dummy@sigeo.local' } },
+      select: { id: true, name: true, email: true, role: true, group: true, avatarUrl: true } as any
+    })
     return res.json(users)
   }
   if (req.method === 'POST') {

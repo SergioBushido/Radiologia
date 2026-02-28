@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { format, parseISO } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { useToast } from './ToastProvider'
@@ -28,8 +29,10 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
     const { confirm } = useConfirm()
     const isAdmin = userRole === 'ADMIN'
     const canEdit = isAdmin || !isMonthBlocked
+    const [selectedUserId, setSelectedUserId] = useState<number>(currentUserId || 0)
 
-    const myLock = preferences.find(p => p.userId === currentUserId && p.type === 'LOCK')
+    const actingUserId = isAdmin ? selectedUserId : currentUserId
+    const myLock = preferences.find(p => p.userId === actingUserId && p.type === 'LOCK')
 
     async function toggleLock() {
         if (!isAdmin && isMonthBlocked) {
@@ -165,7 +168,34 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                                 Libre de guardias
                             </div>
                         )}
+                        {isAdmin && (
+                            <div className="flex justify-end mt-2">
+                                <button
+                                    onClick={onEdit}
+                                    className="flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl font-bold hover:bg-indigo-100 transition-all border border-indigo-200 dark:border-indigo-500/20 text-xs"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                    EDITAR GUARDIA
+                                </button>
+                            </div>
+                        )}
                     </div>
+
+                    {isAdmin && (
+                        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/5">
+                            <h3 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em]">Usuario a gestionar</h3>
+                            <select
+                                value={selectedUserId}
+                                onChange={e => setSelectedUserId(Number(e.target.value))}
+                                className="w-full p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-[var(--text-main)] rounded-xl focus:ring-2 focus:ring-indigo-500 shadow-sm outline-none text-sm font-semibold"
+                            >
+                                <option value={0}>Seleccione un usuario...</option>
+                                {Object.entries(usersMap).map(([id, name]) => (
+                                    <option key={id} value={id}>{name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Blocking Section (Vacations & Courses) */}
                     {(vacations.length > 0 || preferences.some(p => p.type === 'LOCK')) && (
@@ -181,7 +211,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                                             <span className={`font-bold ${vac.type === 'COURSE' ? 'text-amber-700 dark:text-amber-300' : vac.type === 'LD' ? 'text-medical-700 dark:text-medical-300' : 'text-green-700 dark:text-green-300'}`}>{usersMap[vac.userId] || `Usuario ${vac.userId}`}</span>
                                             <span className={`text-[10px] ${vac.type === 'COURSE' ? 'text-amber-600 dark:text-amber-400' : vac.type === 'LD' ? 'text-medical-600 dark:text-medical-400' : 'text-green-600 dark:text-green-400'}`}>{vac.type === 'COURSE' ? 'Cursos' : vac.type === 'LD' ? 'Libre Disp.' : 'Vacaciones'}</span>
                                         </div>
-                                        {(isAdmin || (vac.userId === currentUserId && !isMonthBlocked)) && (
+                                        {(isAdmin || (vac.userId === actingUserId && !isMonthBlocked)) && (
                                             <button onClick={() => toggleBlockingDay(vac.userId, vac.type)} className="p-1.5 text-red-500 hover:bg-white/50 rounded-lg transition-colors">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             </button>
@@ -194,7 +224,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                                             <span className="font-bold text-red-700 dark:text-red-300">{usersMap[pref.userId] || `Usuario ${pref.userId}`}</span>
                                             <span className="text-[10px] text-red-600 dark:text-red-400">Bloqueo Mensual</span>
                                         </div>
-                                        {(isAdmin || (pref.userId === currentUserId && !isMonthBlocked)) && (
+                                        {(isAdmin || (pref.userId === actingUserId && !isMonthBlocked)) && (
                                             <button onClick={() => deletePreference(pref.userId)} className="p-1.5 text-red-500 hover:bg-white/50 rounded-lg transition-colors">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                             </button>
@@ -219,9 +249,16 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                                             </span>
                                         </div>
                                         {(isAdmin || (!isMonthBlocked)) && (
-                                            <button onClick={() => deletePreference(pref.userId)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                            </button>
+                                            <div className="flex items-center gap-1">
+                                                {isAdmin && (
+                                                    <button onClick={() => onEditPreference?.(pref.userId)} className="p-1.5 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+                                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                    </button>
+                                                )}
+                                                <button onClick={() => deletePreference(pref.userId)} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 ))}
@@ -232,31 +269,31 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                     {/* Actions Grid */}
                     <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100 dark:border-white/5">
                         <button
-                            disabled={!isAdmin && isMonthBlocked}
-                            onClick={() => toggleBlockingDay(currentUserId || 0, 'VACATION')}
+                            disabled={(!isAdmin && isMonthBlocked) || !actingUserId}
+                            onClick={() => toggleBlockingDay(actingUserId || 0, 'VACATION')}
                             className="flex flex-col items-center justify-center gap-1 p-3 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl font-bold hover:bg-green-200 dark:hover:bg-green-900/50 transition-all active:scale-95 border border-green-200 dark:border-green-500/20 disabled:opacity-50 disabled:grayscale disabled:scale-100"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" /></svg>
                             <span className="text-[10px]">VACACIONES</span>
                         </button>
                         <button
-                            disabled={!isAdmin && isMonthBlocked}
-                            onClick={() => toggleBlockingDay(currentUserId || 0, 'COURSE')}
+                            disabled={(!isAdmin && isMonthBlocked) || !actingUserId}
+                            onClick={() => toggleBlockingDay(actingUserId || 0, 'COURSE')}
                             className="flex flex-col items-center justify-center gap-1 p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-xl font-bold hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-all active:scale-95 border border-amber-200 dark:border-amber-500/20 disabled:opacity-50 disabled:grayscale disabled:scale-100"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                             <span className="text-[10px]">CURSOS</span>
                         </button>
                         <button
-                            disabled={!isAdmin && isMonthBlocked}
-                            onClick={() => toggleBlockingDay(currentUserId || 0, 'LD')}
+                            disabled={(!isAdmin && isMonthBlocked) || !actingUserId}
+                            onClick={() => toggleBlockingDay(actingUserId || 0, 'LD')}
                             className="flex flex-col items-center justify-center gap-1 p-3 bg-medical-100 dark:bg-medical-900/30 text-medical-700 dark:text-medical-300 rounded-xl font-bold hover:bg-medical-200 dark:hover:bg-medical-900/50 transition-all active:scale-95 border border-medical-200 dark:border-medical-500/20 disabled:opacity-50 disabled:grayscale disabled:scale-100"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                             <span className="text-[10px]">LIBRE DISP.</span>
                         </button>
                         <button
-                            disabled={!isAdmin && isMonthBlocked}
+                            disabled={(!isAdmin && isMonthBlocked) || !actingUserId}
                             onClick={toggleLock}
                             className={`flex flex-col items-center justify-center gap-1 p-3 rounded-xl font-bold transition-all border text-[10px] disabled:opacity-50 disabled:grayscale disabled:scale-100 ${myLock
                                 ? 'bg-red-600 text-white border-red-700 shadow-inner'
@@ -272,8 +309,9 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                             {myLock ? 'UNBLOCK' : 'BLOQUEO MENSUAL'}
                         </button>
                         <button
+                            disabled={!actingUserId}
                             onClick={() => { onBlock(); onClose() }}
-                            className="flex flex-col items-center justify-center gap-1 p-3 bg-medical-50 dark:bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded-xl font-bold hover:bg-medical-100 transition-all border border-medical-200 dark:border-medical-500/20 text-[10px]"
+                            className="flex flex-col items-center justify-center gap-1 p-3 bg-medical-50 dark:bg-medical-500/10 text-medical-600 dark:text-medical-400 rounded-xl font-bold hover:bg-medical-100 transition-all border border-medical-200 dark:border-medical-500/20 text-[10px] disabled:opacity-50 disabled:grayscale disabled:scale-100"
                         >
                             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
                             SOLICITUDES

@@ -75,12 +75,19 @@ export default function Admin() {
           <Logo className="w-10 h-10" />
           <h1 className="text-xl font-black text-medical-600 dark:text-medical-400">Panel de Administración</h1>
         </div>
-        <input
-          type="month"
-          value={selectedMonth}
-          onChange={e => setSelectedMonth(e.target.value)}
-          className="p-2 rounded-lg bg-[var(--bg-card)] border border-slate-200 dark:border-slate-700 text-sm font-bold shadow-sm"
-        />
+        <div className="relative group">
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400 dark:text-slate-500 group-focus-within:text-medical-500 transition-colors">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <input
+            type="month"
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(e.target.value)}
+            className="pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-card)] border border-slate-200 dark:border-white/10 text-sm font-black shadow-lg shadow-black/5 outline-none focus:ring-2 focus:ring-medical-500/50 transition-all cursor-pointer"
+          />
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">

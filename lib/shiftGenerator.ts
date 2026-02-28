@@ -27,6 +27,11 @@ export async function generateSchedule(month: string) {
 
     // Cargar usuarios con todo lo necesario
     const users = await prisma.user.findMany({
+        where: {
+            NOT: {
+                email: 'test@user.com'
+            }
+        },
         include: {
             vacations: {
                 where: {
@@ -88,29 +93,69 @@ export async function generateSchedule(month: string) {
         fixedShiftsMap.set(s.date, { slot1UserId: s.slot1UserId, slot2UserId: s.slot2UserId, id: s.id })
     })
 
+    // Remove Dummy user (id: 0) from valid candidates if it accidentally loaded
+    const realUserStates = userStates.filter(u => u.id !== 0)
+
     let attempts = 0
 
     // 3. Backtracking
-    function backtrack(dayIndex: number): Array<{ date: string; slot1UserId: number; slot2UserId: number }> | null {
+    function backtrack(dayIndex: number): Array<{ date: string; slot1UserId: number; slot2UserId: number; id?: number }> | null {
         if (attempts++ > MAX_ATTEMPTS) return null
         if (dayIndex === days.length) return [] // Éxito
 
         const dateObj = days[dayIndex]
         const dateStr = format(dateObj, 'yyyy-MM-dd')
 
-        // A) Si el día ya tiene guardia fija en DB, la usamos y avanzamos
+        // A) Si el día ya tiene guardia fija en DB, la evaluamos
         if (fixedShiftsMap.has(dateStr)) {
             const fixed = fixedShiftsMap.get(dateStr)!
-            // Nota: Los usuarios ya tienen esta fecha en assignedDates desde la inicialización.
-            // No necesitamos hacer push/pop aquí porque es inmutable para el algoritmo.
-            const res = backtrack(dayIndex + 1)
-            if (res) return [{ date: dateStr, ...fixed }, ...res]
-            return null
+
+            // Si ambos huecos están ocupados por usuarios reales, avanzamos
+            if (fixed.slot1UserId !== 0 && fixed.slot2UserId !== 0) {
+                const res = backtrack(dayIndex + 1)
+                if (res) return [{ date: dateStr, ...fixed }, ...res]
+                return null
+            }
+
+            // Si llegamos aquí, al menos un hueco está disponible (es 0).
+            // Filtramos candidatos para el hueco libre
+            const validUsers = realUserStates.filter(u =>
+                // No puede ser la persona que ya está en el otro hueco
+                u.id !== fixed.slot1UserId && u.id !== fixed.slot2UserId &&
+                checkHardConstraints(u, dateStr, dateObj)
+            )
+
+            // Criterios de ordenación Soft Constraints
+            validUsers.sort((a, b) => calculateScore(b, dateStr) - calculateScore(a, dateStr))
+
+            for (const candidate of validUsers) {
+                // Validar pareja (candidate + el fijo que ya sabemos que existe)
+                const existingRealUser = fixed.slot1UserId !== 0
+                    ? userStates.find(u => u.id === fixed.slot1UserId)
+                    : userStates.find(u => u.id === fixed.slot2UserId)
+
+                if (existingRealUser && !validatePair(candidate, existingRealUser)) continue // Incompatibilidad de grupo 
+
+                candidate.assignedDates.push(dateStr)
+
+                const res = backtrack(dayIndex + 1)
+                if (res) {
+                    return [{
+                        date: dateStr,
+                        slot1UserId: fixed.slot1UserId !== 0 ? fixed.slot1UserId : candidate.id,
+                        slot2UserId: fixed.slot2UserId !== 0 ? fixed.slot2UserId : candidate.id,
+                        id: fixed.id
+                    }, ...res]
+                }
+
+                candidate.assignedDates.pop()
+            }
+            return null // No se pudo rellenar el hueco
         }
 
-        // B) Buscar candidatos válidos
+        // B) Buscar candidatos válidos para días totalmente vacíos
         // Filtrar usuarios que rompen Hard Constraints
-        const validUsers = userStates.filter(u => checkHardConstraints(u, dateStr, dateObj))
+        const validUsers = realUserStates.filter(u => checkHardConstraints(u, dateStr, dateObj))
 
         // Ordenar candidatos (Soft Constraints) - Criterios de Preferencia
         // 1. Preferencia declarada (PREFERENCE): Mayor prioridad.

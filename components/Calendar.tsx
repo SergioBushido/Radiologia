@@ -422,7 +422,7 @@ export default function Calendar() {
           }}
         />
       )}
-      {showDayEditor && selectedDate && <DayEditor date={selectedDate} onClose={() => { setShowDayEditor(false); }} onSaved={() => { fetchShifts(); setShowDetailModal(true) }} />}
+      {showDayEditor && selectedDate && <DayEditor date={selectedDate} hasExistingShift={!!shifts.find(s => s.date === selectedDate)} onClose={() => { setShowDayEditor(false); }} onSaved={() => { fetchShifts(); setShowDetailModal(true) }} />}
     </div>
   )
 }

@@ -62,9 +62,14 @@ export default function ReportsHistoryPage() {
                                 <div className="mobile-card !p-5 flex justify-between items-center group hover:border-medical-500/50 transition-all active:scale-[0.99]">
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                                                {format(parseISO(r.month + '-01'), 'MMMM yyyy', { locale: es })}
-                                            </span>
+                                            <div className="flex items-center gap-2 text-medical-600 dark:text-medical-400">
+                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+                                                    {format(parseISO(r.month + '-01'), 'MMMM yyyy', { locale: es })}
+                                                </span>
+                                            </div>
                                             <span className="text-[10px] font-black px-2 py-0.5 rounded bg-medical-500/10 text-medical-600 dark:text-medical-400 border border-medical-500/20 uppercase tracking-widest">
                                                 #{r.id}
                                             </span>

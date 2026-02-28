@@ -109,6 +109,11 @@ body {
   background: rgba(99, 102, 241, 0.8);
 }
 
+/* Fix native calendar icon in dark mode */
+.dark input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.5) transparent;

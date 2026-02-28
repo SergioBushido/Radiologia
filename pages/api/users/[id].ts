@@ -7,6 +7,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const requester = await getUserFromReq(req)
   const { id } = req.query
   const userId = Number(id)
+  if (!id) return res.status(400).json({ error: 'Missing ID' })
+
+  // Privacy Rule: dummy@sigeo.local is only accessible by test@user.com
+  const targetUser = await prisma.user.findUnique({ where: { id: userId } })
+  if (targetUser?.email === 'dummy@sigeo.local' && requester?.email !== 'test@user.com') {
+    return res.status(403).json({ error: 'Unauthorized: Protected user' })
+  }
 
   if (req.method === 'GET') {
     if (!requester) return res.status(401).json({ error: 'Unauthorized' })

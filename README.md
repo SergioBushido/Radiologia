@@ -1,81 +1,95 @@
 # SIGEO - Sistema Integral de Gestión de Efectivos Operativos
 
-SIGEO es una aplicación web avanzada diseñada para la gestión profesional de guardias, servicios y ausencias en departamentos de Radiología. Centraliza la planificación, la comunicación interna y el seguimiento de equidad en la asignación de tareas.
-
-## 🚀 Características Principales
-
-- **Calendario Inteligente**: Visualización mensual con gestión de slots diarios, indicadores de estado (vacaciones, cursos, LD) y bloqueos administrativos.
-- **Autogeneración Basada en Reglas**: Algoritmo de backtracking que optimiza la equidad, respeta descansos mínimos y cumple con límites mensuales automáticos.
-- **Gestión de Ausencias**: Sistema completo para solicitar y gestionar Vacaciones, Cursos y Días de Libre Disposición (LD) con soporte para selección de rangos.
-- **Comunicación en Tiempo Real**: Mensajería interna estilo WhatsApp con notificaciones de mensajes no leídos y fotos de perfil.
-- **Panel de Administración**: Control total sobre usuarios, grupos, bloqueos mensuales estratégicos y reportes de generación.
-- **Diseño Premium**: Interfaz moderna, responsive (Mobile-first) con modo oscuro y animaciones fluidas.
+SIGEO es una plataforma corporativa avanzada diseñada específicamente para la gestión de guardias y servicios en departamentos médicos (Radiología). La aplicación optimiza la planificación mediante algoritmos de equidad, centraliza la comunicación y garantiza el cumplimiento de reglas de descanso y cobertura.
 
 ---
 
-## 📘 Guía de Usuario (Personal)
+## 🛠 Stack Tecnológico
 
-### 1. Gestión de Guardias y Puntos
-En la sección **"Puntos"**, puedes definir tus preferencias mensuales:
-- **Preferencia (+)**: Indica los días que *deseas* hacer guardia. Gasta puntos para aumentar tu prioridad.
-- **Bloqueo (-)**: Indica los días que *no deseas* hacer guardia. Gasta puntos para que el sistema intente evitar asignarte.
-- **Lock (Bloqueo Total)**: Dispones de **1 Lock al mes** para asegurar que un día específico quede libre (sin gasto de puntos adicionales, pero limitado a uno).
-
-### 2. Vacaciones y Ausencias
-Desde el calendario, haciendo clic en un día (o mediante el botón de **Gestión de Rangos**):
-- Selecciona el tipo: **Vacación**, **Curso** o **LD**.
-- Define un rango de fechas para aplicar la ausencia de forma masiva.
-- Una vez guardado, el sistema te excluirá automáticamente de cualquier guardia en esos días.
-
-### 3. Perfil y Comunicación
-- **Perfil**: Sube tu foto de perfil para ser identificado fácilmente en el chat y el calendario.
-- **Mensajes**: Comunícate directamente con administración. El icono flotante te avisará si tienes mensajes pendientes.
+- **Frontend**: Next.js 13 (Pages Router), React, TailwindCSS.
+- **Backend**: API Routes de Next.js.
+- **Base de Datos**: PostgreSQL alojado en Supabase.
+- **ORM**: Prisma (con soporte para migraciones y tipado fuerte).
+- **Autenticación**: JWT (JSON Web Tokens) con sistema de renovación.
+- **Diseño**: Mobile-first, Glassmorphism, Soporte nativo para Modo Oscuro/Claro.
 
 ---
 
-## 🛠 Guía de Administrador
+## 🏗 Arquitectura del Proyecto
 
-### 1. Gestión de Personal
-En el panel de **Administración**:
-- Crea usuarios asignándoles un **Grupo** (p.ej. MAMA, URGENCIAS).
-- Las reglas de negocio impiden que usuarios del mismo grupo (salvo STANDARD) coincidan en la misma guardia para asegurar cobertura técnica.
-
-### 2. Generación del Calendario
-1. Selecciona el mes en el panel de control.
-2. Pulsa **Autogenerar**. El sistema procesará todas las reglas, vacaciones y puntos de los usuarios.
-3. Revisa el **Informe de Generación** para ver conflictos resueltos y métricas de equidad.
-4. Si necesitas cambios manuales, usa el **Editor de Día** directamente en el calendario.
-
-### 3. Bloqueo Mensual Estratégico
-El administrador puede **bloquear un mes completo** (icono de candado en el calendario):
-- **Efecto**: Los usuarios no podrán añadir, editar ni borrar ninguna preferencia o ausencia mientras el mes esté bloqueado.
-- El administrador mantiene permisos totales incluso en meses bloqueados.
+```text
+├── components/          # Componentes React reutilizables (Calendar, Modals, Nav)
+├── lib/                 # Lógica de negocio core (Algoritmo de guardias, Auth context)
+├── pages/
+│   ├── api/             # Endpoints del Backend (Auth, Shifts, Preferences, Vacations)
+│   ├── admin/           # Panel de administración y gestión de usuarios
+│   └── index.tsx        # Dashboard principal (Calendario y Tablón)
+├── prisma/              # Esquema de base de datos y migraciones
+└── styles/              # Configuración de Tailwind y variables globales
+```
 
 ---
 
-## ⚙️ Configuración Técnica
+## 🧠 Motor de Generación de Guardias
 
-### Stack Tecnológico
-- **Framework**: Next.js 13 (App & API Routes)
-- **Base de Datos**: PostgreSQL vía Supabase
-- **ORM**: Prisma
-- **Estilos**: TailwindCSS con sistema de temas dinámico
-- **Auth**: JWT con almacenamiento seguro
+El núcleo de SIGEO es un **algoritmo de backtracking condicional** (`lib/shiftGenerator.ts`) que procesa miles de combinaciones para encontrar la solución óptima cada mes.
 
-### Reglas de Negocio (Hard Constraints)
-- **Descanso**: Mínimo 2 días de separación entre guardias asignadas.
-- **Límites**: Máximo 1 jueves, 1 viernes y 2 fines de semana al mes por usuario.
-- **Incompatibilidad**: No pueden coincidir MAMA y URGENCIAS en el mismo slot.
-- **Prioridad**: Las vacaciones aprobadas tienen prioridad absoluta sobre cualquier asignación.
+### 1. Restricciones Estrictas (Hard Constraints)
+El sistema garantiza que:
+- **Descanso Obligatorio**: Mínimo de 48 horas entre guardias consecutivas.
+- **Límites Mensuales**: Máximo 1 jueves, 1 viernes y 2 fines de semana por persona.
+- **Incompatbilidades**: El sistema impide que usuarios del mismo grupo técnico coincidan (ej. dos especialistas en MAMA), salvo en el grupo 'STANDARD'.
+- **Conflictos Críticos**: Impide asignar guardias en días marcados como Vacaciones, Cursos o "LD".
+
+### 2. Sistema de Equidad y Puntos
+El algoritmo no es azaroso; utiliza un **sistema de puntuación dinámica**:
+- **Equidad Global**: Prioriza a usuarios con menor carga histórica de guardias.
+- **Puntos de Preferencia**: Los usuarios pueden gastar puntos para solicitar días específicos ("Deseo") o evitar otros ("Bloqueo").
+- **Lock Mensual**: Cada usuario dispone de un bloqueo garantizado (HARD LOCK) que el sistema respeta por encima de cualquier necesidad de servicio.
+
+---
+
+## ✨ Experiencia de Usuario (UX) Premium
+
+SIGEO ha sido diseñado para sentirse como una aplicación nativa de alta gama:
+- **Confirmaciones Integradas**: Los diálogos nativos del navegador se han sustituido por modales estilizados con desenfoque de fondo.
+- **Feedback en Tiempo Real**: Estados de carga animados (pulse effects) en botones críticos para evitar dobles envíos.
+- **Visualización de Datos**: El calendario se adapta dinámicamente; en escritorio muestra nombres completos y en móvil utiliza indicadores visuales (dots) para máxima claridad.
+- **Inmersión**: Uso extensivo de `backdrop-filter` y variables CSS dinámicas para que la interfaz sea agradable en largas jornadas de trabajo.
 
 ---
 
-## 🛠 Instalación y Desarrollo
+## 📘 Gestión Administrativa
 
-1. **Dependencias**: `npm install`
-2. **Entorno**: Configura `.env` con las variables de Supabase (`DATABASE_URL`, `DIRECT_URL`).
-3. **Base de Datos**: `npx prisma generate` y `npx prisma db push` (para sincronizar esquema).
-4. **Arranque**: `npm run dev`
+El panel de administración permite:
+- **Bloqueo de Meses**: Una vez planificado, el administrador puede bloquear el mes para evitar ediciones accidentales por parte del personal.
+- **Reportes de Conflictos**: Tras cada generación, se crea un informe que detalla qué reglas se aplicaron y por qué se eligieron ciertos perfiles.
+- **Personalización de Límites**: Cada usuario puede tener un límite máximo de guardias personalizable si su contrato lo requiere.
 
 ---
-*SIGEO - Desarrollado para la optimización y equidad en servicios de Radiología.*
+
+## 🚀 Instalación y Despliegue
+
+### Requisitos Previos
+- Node.js 18+
+- PostgreSQL (o cuenta en Supabase)
+
+### Pasos
+1. Clonar el repositorio.
+2. `npm install`
+3. Configurar `.env`:
+   ```env
+   DATABASE_URL="postgres://..."
+   DIRECT_URL="postgres://..."
+   JWT_SECRET="tu_secreto_super_seguro"
+   ```
+4. Sincronizar Base de Datos:
+   ```bash
+   npx prisma db push
+   npx prisma generate
+   ```
+5. Ejecutar en desarrollo: `npm run dev`
+
+---
+
+*SIGEO - Sistema Integral de Gestión de Efectivos Operativos. Garantizando la equidad y el descanso en el sector salud.*
