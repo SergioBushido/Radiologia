@@ -50,12 +50,25 @@ The algorithm uses **conditional backtracking** to find optimal shift assignment
 - Follow **Pages Router** conventions for Next.js.
 - Ensure **responsive design** (mobile-first) in all UI components.
 
-### 2. UI/UX Principles
+### Admin & Privacy Rules
+- **Forced Assignment (Modo Admin)**: Admins can bypass hard constraints if the `forced` flag is sent to `/api/shifts`.
+- **Exclusion Rule**: `test@user.com` is strictly excluded from all auto-generation logic (`lib/shiftGenerator.ts`).
+- **Protected User**: `dummy@sigeo.local` is a protected identity. It must be hidden from all user lists and individual API access unless the requester is `test@user.com`.
+
+### UI/UX & Dark Mode
 - **Premium Aesthetics**: Use `backdrop-filter` (glassmorphism), smooth transitions, and pulse effects for loading states.
 - **Custom Modals**: Never use native `window.confirm`. Use the custom modal components provided in `components/`.
+- **Dark Mode Visibility**: Always ensure native browser icons (like `date` or `month` pickers) are visible in dark mode. Use `filter: invert(1)` on `::-webkit-calendar-picker-indicator` inside `.dark` theme.
 - **Feedback**: Always provide visual feedback for async actions (loading states, success/error toast notifications).
 
-### 3. Database & Logic
+## 🧩 Architectural Patterns
+
+### The "Dummy User" (ID 0)
+Due to database constraints (non-nullable doctor slots), we use a "Dummy User" with ID 0 and name **"Libre / Pendiente"** to represent an empty slot.
+- **Usage**: When an Admin wants to delete only one person from a two-person shift, they assign ID 0 to that slot.
+- **Generation**: The `shiftGenerator.ts` recognizes ID 0 as an available slot and will attempt to fill it with a valid candidate while respecting the other fixed user.
+
+### Database & Logic
 - When modifying the schema, remember to run `npx prisma generate`.
 - Be extremely careful when editing `lib/shiftGenerator.ts`. Any change to the backtracking logic can have significant performance or equity implications.
 - Use `date-fns` for all date calculations to maintain consistency.

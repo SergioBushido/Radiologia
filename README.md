@@ -63,8 +63,11 @@ SIGEO ha sido diseñado para sentirse como una aplicación nativa de alta gama:
 
 El panel de administración permite:
 - **Bloqueo de Meses**: Una vez planificado, el administrador puede bloquear el mes para evitar ediciones accidentales por parte del personal.
-- **Reportes de Conflictos**: Tras cada generación, se crea un informe que detalla qué reglas se aplicaron y por qué se eligieron ciertos perfiles.
-- **Personalización de Límites**: Cada usuario puede tener un límite máximo de guardias personalizable si su contrato lo requiere.
+- **Asignación Manual & Edición**: Los administradores pueden asignar guardias a dedo en cualquier momento (antes o después de generar). 
+- **Eliminación Parcial**: Es posible borrar a un solo profesional de una pareja de guardia sin afectar al otro, gracias al sistema de huecos "Libre / Pendiente".
+- **Forzado Administrativo**: Posibilidad de ignorar restricciones ("Hard Constraints") en asignaciones manuales críticas desde el panel de edición.
+- **Reportes de Conflictos**: Tras cada generación, se crea un informe que detalla qué reglas se aplicaron y qué profesionales cubren cada día.
+- **Privacidad Avanzada**: Sistema de usuarios protegidos y exclusión de cuentas de testeo de los algoritmos automáticos.
 
 ---
 
