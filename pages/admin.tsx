@@ -120,6 +120,7 @@ export default function Admin() {
                 <option value="">sin especificar</option>
                 <option value="MAMA">MAMA</option>
                 <option value="URGENCIAS">URGENCIAS</option>
+                <option value="ABDOMEN">ABDOMEN</option>
               </select>
               <select className="w-full p-3 rounded-xl text-sm" value={createForm.role} onChange={e => setCreateForm({ ...createForm, role: e.target.value })}>
                 <option value="USER">USER</option>

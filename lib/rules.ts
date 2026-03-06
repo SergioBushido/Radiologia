@@ -8,7 +8,8 @@ const MAX_SHIFTS_DEFAULT = 7
 
 const GROUPS = {
   MAMA: ['Muñoz', 'Cabrera', 'De Armas'],
-  URGENCIAS: ['Marichal', 'Fdez del Castillo', 'Núñez']
+  URGENCIAS: ['Marichal', 'Fdez del Castillo', 'Núñez'],
+  ABDOMEN: []
 }
 
 async function getUserById(id: number) {
@@ -31,14 +32,21 @@ export async function validateDay(slot1UserId: number, slot2UserId: number, date
 
   // Group conflict: same group (except STANDARD)
   if (slot1.group && slot2.group && slot1.group === slot2.group && (slot1.group as any) !== 'STANDARD') {
-    errors.push({ code: 'GROUP_CONFLICT', message: `Users from group ${slot1.group} cannot work together` })
+    errors.push({ code: 'GROUP_CONFLICT', message: `Personal de la misma especialidad (${slot1.group}) no pueden coincidir en la misma guardia` })
   }
 
-  // MAMA vs URGENCIAS conflict
+  // MAMA vs URGENCIAS vs ABDOMEN conflict
   const isMama = (g: string | null) => g === 'MAMA'
   const isUrg = (g: string | null) => g === 'URGENCIAS'
-  if ((isMama(slot1.group) && isUrg(slot2.group)) || (isMama(slot2.group) && isUrg(slot1.group))) {
-    errors.push({ code: 'MAMA_URGENCIAS_CONFLICT', message: 'No pueden coincidir en la misma guardia personal de urgencias y de mama' })
+  const isAbd = (g: string | null) => g === 'ABDOMEN'
+
+  const g1 = slot1.group
+  const g2 = slot2.group
+
+  if ((isMama(g1) && isUrg(g2)) || (isMama(g2) && isUrg(g1)) ||
+    (isMama(g1) && isAbd(g2)) || (isMama(g2) && isAbd(g1)) ||
+    (isUrg(g1) && isAbd(g2)) || (isUrg(g2) && isAbd(g1))) {
+    errors.push({ code: 'SPECIALTY_CONFLICT', message: 'No pueden coincidir en la misma guardia personal de especialidades diferentes (MAMA, URGENCIAS, ABDOMEN)' })
   }
 
   // Check for Vacation/Block on date (from ShiftPreference type=BLOCK or Vacation table)

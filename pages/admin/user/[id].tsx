@@ -163,6 +163,7 @@ export default function AdminUser() {
               <option value="">Sin especificar</option>
               <option value="MAMA">MAMA</option>
               <option value="URGENCIAS">URGENCIAS</option>
+              <option value="ABDOMEN">ABDOMEN</option>
             </select>
           </div>
         </div>
