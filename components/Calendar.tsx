@@ -373,17 +373,10 @@ export default function Calendar() {
           existingPreference={preferences.find(p => p.date === selectedDate && p.userId === (targetUserIdToEdit || user?.id))}
           // If editing target, we might not know their remaining points easily without fetching? 
           // For now, let's calculate from loaded preferences if we have them all (Admin does).
-          prefPointsRemaining={(() => {
+          pointsRemaining={(() => {
             const uid = targetUserIdToEdit || user?.id
             if (!uid) return 20
-            const userPrefs = preferences.filter(p => p.userId === uid && p.type === 'PREFERENCE')
-            const used = userPrefs.filter(p => p.date !== selectedDate).reduce((sum, p) => sum + p.points, 0)
-            return 20 - used
-          })()}
-          blockPointsRemaining={(() => {
-            const uid = targetUserIdToEdit || user?.id
-            if (!uid) return 20
-            const userPrefs = preferences.filter(p => p.userId === uid && p.type === 'BLOCK')
+            const userPrefs = preferences.filter(p => p.userId === uid && (p.type === 'PREFERENCE' || p.type === 'BLOCK'))
             const used = userPrefs.filter(p => p.date !== selectedDate).reduce((sum, p) => sum + p.points, 0)
             return 20 - used
           })()}
