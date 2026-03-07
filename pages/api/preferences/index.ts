@@ -74,14 +74,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         })
 
-        // Calculate new total for the specific type
-        const sameTypePrefs = existing.filter(p => p.date !== date && p.type === type)
-        const typeTotalUsed = sameTypePrefs.reduce((sum: number, p: any) => sum + p.points, 0)
+        // Calculate new total for both PREFERENCE and BLOCK
+        const otherPrefs = existing.filter(p => p.date !== date && (p.type === 'PREFERENCE' || p.type === 'BLOCK'))
+        const totalUsed = otherPrefs.reduce((sum: number, p: any) => sum + p.points, 0)
 
-        if (typeTotalUsed + points > 20) {
-            const label = type === 'PREFERENCE' ? 'Deseo Guardia' : 'Evitar Guardia'
+        if (totalUsed + points > 20) {
             return res.status(400).json({
-                error: `Has excedido el límite de 20 puntos para '${label}'. Te quedan ${20 - typeTotalUsed} puntos.`
+                error: `Has excedido el límite total de 20 puntos a repartir. Te quedan ${20 - totalUsed} puntos.`
             })
         }
 

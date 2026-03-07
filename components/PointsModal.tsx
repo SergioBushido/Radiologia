@@ -8,8 +8,7 @@ type Props = {
     onClose: () => void
     onSave: (type: 'PREFERENCE' | 'BLOCK', points: number) => void
     onDelete: () => void
-    prefPointsRemaining: number
-    blockPointsRemaining: number
+    pointsRemaining: number
 }
 
 export default function PointsModal({
@@ -18,15 +17,13 @@ export default function PointsModal({
     onClose,
     onSave,
     onDelete,
-    prefPointsRemaining,
-    blockPointsRemaining
+    pointsRemaining
 }: Props) {
     const [type, setType] = useState<'PREFERENCE' | 'BLOCK'>(existingPreference?.type || 'PREFERENCE')
     const [points, setPoints] = useState<number>(existingPreference?.points || 1)
 
     // Calculating max points allowable for this specific edit
-    const pointsRemaining = type === 'PREFERENCE' ? prefPointsRemaining : blockPointsRemaining
-    const currentUsed = (existingPreference && existingPreference.type === type) ? existingPreference.points : 0
+    const currentUsed = existingPreference ? existingPreference.points : 0
     const maxAllocatable = pointsRemaining + currentUsed
 
     // Reset points if switching type makes current points invalid

@@ -55,7 +55,11 @@ export default function Admin() {
 
     if (res.ok) {
       localStorage.setItem('lastGenerate', JSON.stringify(data))
-      addToast('Generador finalizado', 'info')
+      if (data.hasHoles) {
+        addToast('Generado con huecos libres por conflicto de reglas', 'warning')
+      } else {
+        addToast('Generador finalizado con éxito', 'success')
+      }
       if (data.reportId) {
         router.push(`/admin/report?id=${data.reportId}`)
       } else {

@@ -57,7 +57,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // We still have the shifts saved, so we continue
     }
 
-    return res.json({ ok: true, createdCount: solution.length, shifts: solution, reportId })
+    // Comprobar si hay huecos sin asignar (ID 0)
+    const hasHoles = solution.some(s => s.slot1UserId === 0 || s.slot2UserId === 0)
+
+    return res.json({ ok: true, createdCount: solution.length, shifts: solution, reportId, hasHoles })
   } catch (err: any) {
     console.error('GENERATION API ERROR:', err)
     return res.status(500).json({ error: err.message })

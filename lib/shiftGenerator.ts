@@ -150,7 +150,18 @@ export async function generateSchedule(month: string) {
 
                 candidate.assignedDates.pop()
             }
-            return null // No se pudo rellenar el hueco
+            // Fallback: Si no se pudo rellenar el hueco por reglas, dejamos el hueco Libre/Pendiente (0)
+            const fallbackRes = backtrack(dayIndex + 1)
+            if (fallbackRes) {
+                return [{
+                    date: dateStr,
+                    slot1UserId: fixed.slot1UserId,
+                    slot2UserId: 0, // Fallback al dummy
+                    id: fixed.id
+                }, ...fallbackRes]
+            }
+
+            return null
         }
 
         // B) Buscar candidatos válidos para días totalmente vacíos
@@ -169,30 +180,50 @@ export async function generateSchedule(month: string) {
         })
 
         // Probar parejas (Combinaciones de candidatos válidos)
+        // Optimizacion: Ordenar todas las posibles parejas por su puntuación combinada
+        // para asegurar que elegimos la mejor opción colectiva, no solo la primera válida del mejor usuario individual.
+        const validPairs = []
         for (let i = 0; i < validUsers.length; i++) {
             for (let j = i + 1; j < validUsers.length; j++) {
                 const u1 = validUsers[i]
                 const u2 = validUsers[j]
 
-                // Validar Conflicto de Pareja (Reglas de Grupo)
-                if (!validatePair(u1, u2)) continue
-
-                // Intentar asignar (Marcar fecha en estado temporal)
-                u1.assignedDates.push(dateStr)
-                u2.assignedDates.push(dateStr)
-
-                // Recursión: Continuar al siguiente día
-                const res = backtrack(dayIndex + 1)
-
-                if (res) {
-                    // Éxito: Retornar solución construida
-                    return [{ date: dateStr, slot1UserId: u1.id, slot2UserId: u2.id }, ...res]
+                if (validatePair(u1, u2)) {
+                    validPairs.push({
+                        u1,
+                        u2,
+                        combinedScore: calculateScore(u1, dateStr) + calculateScore(u2, dateStr)
+                    })
                 }
-
-                // Backtrack: Si el camino falla, deshacer los cambios y probar siguiente pareja
-                u1.assignedDates.pop()
-                u2.assignedDates.pop()
             }
+        }
+
+        validPairs.sort((a, b) => b.combinedScore - a.combinedScore)
+
+        for (const pair of validPairs) {
+            const { u1, u2 } = pair
+
+            // Intentar asignar (Marcar fecha en estado temporal)
+            u1.assignedDates.push(dateStr)
+            u2.assignedDates.push(dateStr)
+
+            // Recursión: Continuar al siguiente día
+            const res = backtrack(dayIndex + 1)
+
+            if (res) {
+                // Éxito: Retornar solución construida
+                return [{ date: dateStr, slot1UserId: u1.id, slot2UserId: u2.id }, ...res]
+            }
+
+            // Backtrack: Si el camino falla, deshacer los cambios y probar siguiente pareja
+            u1.assignedDates.pop()
+            u2.assignedDates.pop()
+        }
+
+        // Fallback: Si ninguna pareja es válida para este día vacío, lo dejamos totalmente libre
+        const fallbackEmptyRes = backtrack(dayIndex + 1)
+        if (fallbackEmptyRes) {
+            return [{ date: dateStr, slot1UserId: 0, slot2UserId: 0 }, ...fallbackEmptyRes]
         }
 
         return null
@@ -286,11 +317,15 @@ export async function generateSchedule(month: string) {
             score -= (1000 + pref.points) // Gran penalización
         }
 
-        // C. Equidad (Menos guardias -> Más score)
-        // Usar total shifts (histórico + actual)
-        // Multiplicador negativo pequeño para desempatar
-        const total = u.totalShiftsAllTime + u.assignedDates.length
-        score -= (total * 10)
+        // C. Equidad 
+        // Reducimos drásticamente el peso del histórico para que NUNCA supere los 1000 puntos de preferencia.
+        // Un multiplicador de 0.1 significa que alguien con 1000 guardias históricas pierde 100 puntos,
+        // que es menos que los 1000 puntos que otorga una PREFERENCIA.
+        // Damos más peso a las guardias de este mes para equilibrar equidad a corto plazo.
+        const historicalPenalty = u.totalShiftsAllTime * 0.1
+        const currentMonthPenalty = u.assignedDates.length * 50 // Cada guardia este mes resta 50 puntos
+
+        score -= (historicalPenalty + currentMonthPenalty)
 
         return score
     }
