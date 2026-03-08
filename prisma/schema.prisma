@@ -19,10 +19,12 @@ model User {
   role         String    @default("USER")
   group        String?
   monthlyLimit Int       @default(999)
-  avatarUrl    String?   @map("avatarUrl")
-  createdAt    DateTime  @default(now()) @map("createdAt")
+  avatarUrl        String?   @map("avatarUrl")
+  createdAt        DateTime  @default(now()) @map("createdAt")
+  resetToken       String?   @map("resetToken")
+  resetTokenExpiry DateTime? @map("resetTokenExpiry")
 
-  shiftsSlot1    Shift[]     @relation("Slot1User")
+  shiftsSlot1      Shift[]     @relation("Slot1User")
   shiftsSlot2    Shift[]     @relation("Slot2User")
   blocks         Block[]
   preferences    ShiftPreference[]
