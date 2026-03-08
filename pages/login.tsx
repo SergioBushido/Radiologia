@@ -5,6 +5,7 @@ import { useToast } from '../components/ToastProvider'
 import { useLoading } from '../components/LoadingProvider'
 
 import Logo from '../components/Logo'
+import Link from 'next/link'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -96,6 +97,12 @@ export default function Login() {
             <button className="w-full mt-6 bg-medical-600 hover:bg-medical-500 text-white font-bold p-4 rounded-xl shadow-lg shadow-medical-500/20 transition-all active:scale-95">
               Entrar
             </button>
+
+            <div className="text-center mt-6">
+              <Link href="/forgot-password" className="text-sm text-slate-500 hover:text-medical-600 transition-colors">
+                ¿Has olvidado la contraseña?
+              </Link>
+            </div>
           </div>
         </div>
       </form>
