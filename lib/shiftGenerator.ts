@@ -254,16 +254,24 @@ export async function generateSchedule(month: string) {
         // 4. Límites por día de semana
         const dayOfWeek = getDay(dateObj) // 0=Domingo, ..., 4=Jueves, 5=Viernes, 6=Sábado
 
-        // Jueves: Máximo 1 al mes
+        // Jueves: Máximo 1 al mes (Se puede sobrepasar si es una PREFERENCIA expresa)
         if (dayOfWeek === 4) {
             const thursdays = u.assignedDates.filter(d => getDay(parseISO(d)) === 4).length
-            if (thursdays >= 1) return false
+            if (thursdays >= 1) {
+                if (!(pref && pref.type === 'PREFERENCE')) {
+                    return false
+                }
+            }
         }
 
-        // Viernes: Máximo 1 al mes
+        // Viernes: Máximo 1 al mes (Se puede sobrepasar si es una PREFERENCIA expresa)
         if (dayOfWeek === 5) {
             const fridays = u.assignedDates.filter(d => getDay(parseISO(d)) === 5).length
-            if (fridays >= 1) return false
+            if (fridays >= 1) {
+                if (!(pref && pref.type === 'PREFERENCE')) {
+                    return false
+                }
+            }
         }
 
         // Fines de semana: Máximo 2 al mes
@@ -307,20 +315,20 @@ export async function generateSchedule(month: string) {
         let score = 0
         const pref = u.preferenceByDate.get(dateStr)
 
-        // A. Preferencia declarada (Alta prioridad)
+        // A. Preferencia declarada (Prioridad extrema)
         if (pref && pref.type === 'PREFERENCE') {
-            score += 1000 + pref.points // Gran boost
+            score += 5000 + pref.points // Boost extremo para garantizar prioridad sobre cualquier equidad
         }
 
-        // B. Evitar Bloqueos (Penalización)
+        // B. Evitar Bloqueos (Penalización extrema)
         if (pref && pref.type === 'BLOCK') {
-            score -= (1000 + pref.points) // Gran penalización
+            score -= (5000 + pref.points) // Gran penalización
         }
 
         // C. Equidad 
-        // Reducimos drásticamente el peso del histórico para que NUNCA supere los 1000 puntos de preferencia.
+        // Reducimos drásticamente el peso del histórico para que NUNCA supere los 5000 puntos de preferencia.
         // Un multiplicador de 0.1 significa que alguien con 1000 guardias históricas pierde 100 puntos,
-        // que es menos que los 1000 puntos que otorga una PREFERENCIA.
+        // que es mucho menos que los 5000 puntos que otorga una PREFERENCIA.
         // Damos más peso a las guardias de este mes para equilibrar equidad a corto plazo.
         const historicalPenalty = u.totalShiftsAllTime * 0.1
         const currentMonthPenalty = u.assignedDates.length * 50 // Cada guardia este mes resta 50 puntos
