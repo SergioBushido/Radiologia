@@ -36,7 +36,6 @@ The algorithm uses **conditional backtracking** to find optimal shift assignment
     - Max 2 weekends (Sat/Sun) per month.
 - **Group Incompatibilities**: Users in the same group (e.g., 'MAMA') cannot coincide, except for group 'STANDARD'.
 - **Exclusion Days**: No assignments on Vacations, Courses, or "LD" days.
-- **Pair Incompatibilities**: Specific groups (e.g., MAMA and URGENCIAS) cannot work together.
 
 ### Soft Constraints (Equity System)
 - **Declared Preference**: High priority to assigned "PREFERENCE" days.

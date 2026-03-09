@@ -302,12 +302,6 @@ export async function generateSchedule(month: string) {
         // 1. Conflictos de Grupo: Mismo grupo no puede coincidir (salvo STANDARD)
         if (u1.group && u2.group && u1.group === u2.group && u1.group !== 'STANDARD') return false
 
-        // 2. Conflicto MAMA vs URGENCIAS vs ABDOMEN: Incompatibles entre sí
-        const g1 = u1.group
-        const g2 = u2.group
-        const specialties = ['MAMA', 'URGENCIAS', 'ABDOMEN']
-        if (g1 && g2 && g1 !== g2 && specialties.includes(g1) && specialties.includes(g2)) return false
-
         return true
     }
 

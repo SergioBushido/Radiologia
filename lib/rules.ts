@@ -35,20 +35,6 @@ export async function validateDay(slot1UserId: number, slot2UserId: number, date
     errors.push({ code: 'GROUP_CONFLICT', message: `Personal de la misma especialidad (${slot1.group}) no pueden coincidir en la misma guardia` })
   }
 
-  // MAMA vs URGENCIAS vs ABDOMEN conflict
-  const isMama = (g: string | null) => g === 'MAMA'
-  const isUrg = (g: string | null) => g === 'URGENCIAS'
-  const isAbd = (g: string | null) => g === 'ABDOMEN'
-
-  const g1 = slot1.group
-  const g2 = slot2.group
-
-  if ((isMama(g1) && isUrg(g2)) || (isMama(g2) && isUrg(g1)) ||
-    (isMama(g1) && isAbd(g2)) || (isMama(g2) && isAbd(g1)) ||
-    (isUrg(g1) && isAbd(g2)) || (isUrg(g2) && isAbd(g1))) {
-    errors.push({ code: 'SPECIALTY_CONFLICT', message: 'No pueden coincidir en la misma guardia personal de especialidades diferentes (MAMA, URGENCIAS, ABDOMEN)' })
-  }
-
   // Check for Vacation/Block on date (from ShiftPreference type=BLOCK or Vacation table)
   // Assuming Vacation model is used for strict blocks (approved vacations)
   // ShiftPreference type=BLOCK is soft constraint (avoidance) but validation function might want to flag it?
