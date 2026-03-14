@@ -63,6 +63,46 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     })
 
+    // Si es un anuncio nuevo (no una respuesta), enviar mail masivo
+    if (!parentId) {
+      const webhookUrl = process.env.MAKE_ANNOUNCEMENT_WEBHOOK_URL
+      if (webhookUrl) {
+        // Ejecutamos el envío de forma asíncrona para no bloquear la respuesta al usuario
+        (async () => {
+          try {
+            const allUsers = await prisma.user.findMany({
+              where: {
+                id: { not: 0 }, // Excluir usuario dummy
+                email: { not: user.email } // Opcional: excluir al remitente
+              },
+              select: { email: true, name: true }
+            })
+
+            const emails = allUsers.map(u => u.email)
+
+            if (emails.length > 0) {
+              await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  senderName: user.name,
+                  content: post.content,
+                  recipients: emails,
+                  users: allUsers, // Por si el webhook necesita los nombres también
+                  createdAt: post.createdAt
+                })
+              })
+              console.log(`Mass announcement email triggered for ${emails.length} users`)
+            }
+          } catch (err) {
+            console.error('Error triggering mass announcement email:', err)
+          }
+        })()
+      } else {
+        console.warn('MAKE_ANNOUNCEMENT_WEBHOOK_URL not set. Skipping mass email notification.')
+      }
+    }
+
     return res.json(post)
   }
 
