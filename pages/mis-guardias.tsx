@@ -31,11 +31,12 @@ export default function MisGuardias() {
       if (!res.ok) throw new Error('Failed to fetch shifts')
       const data = await res.json()
 
-      // Use loose equality (==) or cast to Number to be safe against number-string mismatch
-      const my = (data.shifts || []).filter((s: any) =>
-        Number(s.slot1UserId) === Number(currentUser.id) ||
-        Number(s.slot2UserId) === Number(currentUser.id)
-      )
+      const my = (data.shifts || [])
+        .filter((s: any) =>
+          Number(s.slot1UserId) === Number(currentUser.id) ||
+          Number(s.slot2UserId) === Number(currentUser.id)
+        )
+        .sort((a: any, b: any) => a.date.localeCompare(b.date))
       setShifts(my)
 
       const statRes = await fetch(`/api/users/${currentUser.id}/stats?month=${monthStr}`, { headers })
