@@ -67,6 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     let debugInfo: any = { webhookStatus: 'Not Attempted' }
     if (!parentId) {
       const webhookUrl = (process.env.MAKE_ANNOUNCEMENT_WEBHOOK_URL || '').trim()
+      debugInfo.webhookUrl = webhookUrl
       if (webhookUrl) {
         try {
           const allUsers = await prisma.user.findMany({
