@@ -64,8 +64,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     // Si es un anuncio nuevo (no una respuesta), enviar mail masivo
+    let debugInfo: any = { webhookStatus: 'Not Attempted' }
     if (!parentId) {
       const webhookUrl = (process.env.MAKE_ANNOUNCEMENT_WEBHOOK_URL || '').trim()
+      debugInfo.webhookUrl = webhookUrl
       if (webhookUrl) {
         try {
           const allUsers = await prisma.user.findMany({
@@ -79,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const emails = allUsers.map(u => u.email)
 
           if (emails.length > 0) {
-            await fetch(webhookUrl, {
+            const resp = await fetch(webhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -90,17 +92,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 createdAt: post.createdAt
               })
             })
-            console.log(`Mass announcement email triggered for ${emails.length} users`)
+            debugInfo.webhookStatus = resp.status
+            if (!resp.ok) {
+              debugInfo.webhookError = await resp.text()
+              console.error('Make webhook return non-200:', resp.status, debugInfo.webhookError)
+            }
+          } else {
+            debugInfo.webhookStatus = 'No users to notify'
           }
         } catch (err: any) {
           console.error('Error triggering mass announcement email:', err)
+          debugInfo.error = err.message
         }
       } else {
         console.warn('MAKE_ANNOUNCEMENT_WEBHOOK_URL not set.')
+        debugInfo.webhookStatus = 'No URL in ENV'
       }
     }
 
-    return res.json(post)
+    return res.json({ ...post, _debug: debugInfo })
   }
 
   if (req.method === 'DELETE') {
