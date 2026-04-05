@@ -64,16 +64,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     // Si es un anuncio nuevo (no una respuesta), enviar mail masivo
+    let debugInfo: any = { webhookStatus: 'Not Attempted' }
     if (!parentId) {
-      const webhookUrl = process.env.MAKE_ANNOUNCEMENT_WEBHOOK_URL
+      const webhookUrl = (process.env.MAKE_ANNOUNCEMENT_WEBHOOK_URL || '').trim()
       if (webhookUrl) {
-        // En Vercel no podemos dejar promesas en background flotando porque el entorno
-        // suspende la ejecución cuando retornamos la respuesta. Debemos esperar la resolución.
         try {
           const allUsers = await prisma.user.findMany({
             where: {
-              id: { not: 0 }, // Excluir usuario dummy
-              email: { not: user.email } // Opcional: excluir al remitente
+              id: { not: 0 },
+              email: { not: user.email }
             },
             select: { email: true, name: true }
           })
@@ -81,28 +80,36 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           const emails = allUsers.map(u => u.email)
 
           if (emails.length > 0) {
-            await fetch(webhookUrl, {
+            const resp = await fetch(webhookUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 senderName: user.name,
                 content: post.content,
                 recipients: emails,
-                users: allUsers, // Por si el webhook necesita los nombres también
+                users: allUsers,
                 createdAt: post.createdAt
               })
             })
-            console.log(`Mass announcement email triggered for ${emails.length} users`)
+            debugInfo.webhookStatus = resp.status
+            if (!resp.ok) {
+              debugInfo.webhookError = await resp.text()
+              console.error('Make webhook return non-200:', resp.status, debugInfo.webhookError)
+            }
+          } else {
+            debugInfo.webhookStatus = 'No users to notify'
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error triggering mass announcement email:', err)
+          debugInfo.error = err.message
         }
       } else {
-        console.warn('MAKE_ANNOUNCEMENT_WEBHOOK_URL not set. Skipping mass email notification.')
+        console.warn('MAKE_ANNOUNCEMENT_WEBHOOK_URL not set.')
+        debugInfo.webhookStatus = 'No URL in ENV'
       }
     }
 
-    return res.json(post)
+    return res.json({ ...post, _debug: debugInfo })
   }
 
   if (req.method === 'DELETE') {
