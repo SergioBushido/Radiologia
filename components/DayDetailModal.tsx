@@ -136,8 +136,17 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all" onClick={onClose}>
-            <div className={`bg-[var(--bg-surface)] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh]`} onClick={e => e.stopPropagation()}>
+            <div className={`bg-[var(--bg-surface)] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
                 <div className="bg-gradient-to-br from-medical-600 to-medical-800 p-6 text-white text-center relative overflow-hidden flex-none">
+                    <button 
+                        onClick={onClose} 
+                        className="absolute top-4 right-4 z-10 p-2 hover:bg-white/10 rounded-full transition-colors"
+                        aria-label="Cerrar"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     <h2 className="text-3xl font-extrabold mb-1 drop-shadow-lg">{format(d, 'dd')}</h2>
                     <p className="text-medical-100 uppercase tracking-[0.2em] text-[10px] font-bold">{format(d, 'MMMM yyyy', { locale: es })}</p>
@@ -149,7 +158,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                     </div>
                 </div>
 
-                <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
+                <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1">
                     <div className="space-y-4">
                         <h3 className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-[0.15em] mb-2">Personal de Guardia</h3>
                         {shift ? (
@@ -318,11 +327,15 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
                         </button>
                     </div>
 
+                </div>
+
+                <div className="p-4 border-t border-slate-100 dark:border-white/5 flex-none bg-[var(--bg-surface)]">
                     <button
                         onClick={onClose}
-                        className="w-full p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-bold uppercase tracking-widest transition-colors"
+                        className="w-full p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
                     >
-                        Cerrar panel
+                        <span>Cerrar panel</span>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                     </button>
                 </div>
             </div>
