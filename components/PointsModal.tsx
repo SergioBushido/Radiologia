@@ -42,8 +42,8 @@ export default function PointsModal({
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-[var(--bg-surface)] rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[85dvh]">
                 <div className="p-4 bg-gradient-to-r from-medical-600 to-medical-500 text-white flex justify-between items-center">
                     <h3 className="font-bold text-lg capitalize">{format(parseISO(date), 'EEEE d MMMM', { locale: es })}</h3>
                     <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-full transition"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg></button>

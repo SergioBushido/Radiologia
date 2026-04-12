@@ -135,8 +135,8 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
     }
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4 transition-all" onClick={onClose}>
-            <div className={`bg-[var(--bg-surface)] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[85vh]`} onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[70] flex items-center justify-center p-4 transition-all" onClick={onClose}>
+            <div className={`bg-[var(--bg-surface)] rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 dark:border-white/10 flex flex-col max-h-[85dvh]`} onClick={e => e.stopPropagation()}>
                 <div className="bg-gradient-to-br from-medical-600 to-medical-800 p-6 text-white text-center relative overflow-hidden flex-none">
                     <button 
                         onClick={onClose} 
@@ -329,7 +329,7 @@ export default function DayDetailModal({ date, shift, usersMap, userRole, curren
 
                 </div>
 
-                <div className="p-4 border-t border-slate-100 dark:border-white/5 flex-none bg-[var(--bg-surface)]">
+                <div className="p-4 pb-8 border-t border-slate-100 dark:border-white/5 flex-none bg-[var(--bg-surface)]">
                     <button
                         onClick={onClose}
                         className="w-full p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] text-xs font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
